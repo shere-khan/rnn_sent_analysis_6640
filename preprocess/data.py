@@ -89,21 +89,10 @@ def prepreprocessdata():
 
     return sentences
 
-if __name__ == '__main__':
-    isfilesaved = False
-    f = open(sys.argv[1])
-    isfilesaved = True if f else False
-    if not isfilesaved:
-        sentences = prepreprocessdata()
-        pickle.dump(sentences, open("sentences.p", "wb"))
-    else:
-        sentences = pickle.load(open("sentences.p", "rb"))
-    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
-                        level=logging.INFO)
-
+def train_w2v_model():
     num_features = 300  # Word vector dimensionality
     min_word_count = 40  # Minimum word count
-    num_workers = 4  # Number of threads to run in parallel
+    num_workers = 8  # Number of threads to run in parallel
     context = 10  # Context window size
     downsampling = 1e-3  # Downsample setting for frequent words
 
@@ -117,3 +106,18 @@ if __name__ == '__main__':
 
     # Save the model
     model.save("word2vecmodel")
+
+if __name__ == '__main__':
+    isfilesaved = False
+    f = open(sys.argv[1])
+    isfilesaved = True if f else False
+    if not isfilesaved:
+        sentences = prepreprocessdata()
+        pickle.dump(sentences, open("sentences.p", "wb"))
+    else:
+        sentences = pickle.load(open("sentences.p", "rb"))
+    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
+                        level=logging.INFO)
+
+    train_w2v_model()
+

@@ -9,3 +9,5 @@ model.ckpt*
 checkpoint
 tf.log
 aclImdb/*
+*.p
+word2vecmodel
