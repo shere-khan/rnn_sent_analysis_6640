@@ -8,3 +8,4 @@ neg.txt
 model.ckpt*
 checkpoint
 tf.log
+aclImdb/*
