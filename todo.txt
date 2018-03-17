@@ -1,0 +1,2 @@
+cite imdb moview review data stanford:
+http://ai.stanford.edu/~amaas/data/sentiment/

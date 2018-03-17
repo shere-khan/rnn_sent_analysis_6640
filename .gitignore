@@ -1,0 +1,10 @@
+sentiment_set.pickle
+pos.txt
+neg.txt
+.idea/*
+*.csv
+*.zip
+*.pickle
+model.ckpt*
+checkpoint
+tf.log
