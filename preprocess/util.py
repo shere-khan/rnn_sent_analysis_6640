@@ -76,5 +76,6 @@ def prepreprocessdata():
     for review in traindata:
         sentences += getsentences(review, tokr)
 
-    pickle.dump(sentences, open("sentences.p", "wb"))
+    pickle.dump(sentences, open(input("Enter pickle name: "), "wb"))
+
     return sentences
