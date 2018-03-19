@@ -49,45 +49,51 @@ def getsentences(review, tokenizer, remove_sw=False):
 
     return sents
 
-def prepreprocessdata():
+def combinedata(neg, pos):
+    reviews = neg.extend(pos)
+    reviews.shuffle()
+
+    return reviews
+
+def changedata(fn, cap, tokr, label):
+    print("Processing data...")
+    files = get_files_in_dir(fn)
+    data = processfiles(files[:cap], label)
+
+    sents = list()
+    for review in data:
+        sents += getsentences(review, tokr)
+
+    return sents
+
+def prepreprocessdata(cap=1000):
     # todo stpl size of trianing set test set
     # todo note # of pos reviews for train and test is equal
-    cap = -1
-
-    # Process test data
-    print("Processing test data...")
-    testneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/neg'
-    test_neg_files = get_files_in_dir(testneg)
-    testdata = processfiles(test_neg_files[:cap], 0)
-
-    testpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/pos'
-    test_pos_files = get_files_in_dir(testpos)
-    testdata.extend(processfiles(test_pos_files[:cap], 1))
-
     tokr = load('tokenizers/punkt/english.pickle')
 
-    testsentences = list()
-    for review in testdata:
-        testsentences += getsentences(review, tokr)
+    # Process test data
+    testneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/neg'
+    test_neg_sents = changedata(testneg, cap, tokr, 0)
 
-    print("Creating test data pickle")
-    pickle.dump(testsentences, open(input("Enter pickle name for train: "), "wb"))
+    testpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/pos'
+    test_pos_sents = changedata(testpos, cap, tokr, 1)
+
+    labled_train_reviews = combinedata(test_neg_sents, test_pos_sents)
+
+    print("Creating pickle for processed data")
+    pickle.dump(labled_train_reviews, open(input("Enter pickle name: "), "wb"))
+
 
     # Process training data
     print("Processing training data...")
     trainneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/train/neg'
-    train_neg_files = get_files_in_dir(trainneg)
-    traindata = processfiles(train_neg_files[:cap], 0)
+    train_neg_sents = changedata(trainneg, cap, tokr, 0)
 
     trainpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/train/pos'
-    train_pos_files = get_files_in_dir(trainpos)
-    traindata.extend(processfiles(train_pos_files[:cap], 1))
+    train_pos_sents = changedata(trainpos, cap, tokr, 1)
 
-    sentences = list()
-    for review in traindata:
-        sentences += getsentences(review, tokr)
+    labled_test_reviews = combinedata(train_neg_sents, train_pos_sents)
 
-    print("Creating training data pickle")
-    pickle.dump(sentences, open(input("Enter pickle name for train: "), "wb"))
+    print("Creating pickle for processed data")
+    pickle.dump(labled_test_reviews, open(input("Enter pickle name: "), "wb"))
 
-    return sentences

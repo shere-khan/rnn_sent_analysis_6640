@@ -1,8 +1,9 @@
-import pickle, sys, os
+import pickle, sys, os, random
 import logging
 from gensim.models import Word2Vec
 from preprocess import util
 from keras import backend
+
 
 def train_w2v_model(sentences):
     num_features = 300  # Word vector dimensionality
@@ -21,33 +22,7 @@ def train_w2v_model(sentences):
 
     return model
 
-def openpickle():
-    doesfileexist = True
-    if input("Load data pickle (y/n)?") == 'y':
-        fn = input("Enter the pickle name: ")
-        while not os.path.isfile(fn):
-            fn = input("File does not exist, would you like to reprocess data (y/n)?")
-            if fn == 'y':
-                doesfileexist = False
-                sentences = util.prepreprocessdata()
-            else:
-                fn = input("Enter filename?")
-    else: # process file
-        sentences = None
-        fn = input("Would you like to process data (y/n)?")
-        if fn == 'y':
-            doesfileexist = False
-            sentences = util.prepreprocessdata()
-        else:
-            exit(0)
-
-
-    if doesfileexist:
-        sentences = pickle.load(open(fn, "rb"))
-
-    return sentences
-
-def openw2v():
+def openw2v(sentences):
     doesfileexist = True
     model = None
     fn = input("Enter w2v model name: ")
@@ -64,19 +39,57 @@ def openw2v():
 
     return model
 
+def prepare_w2v_train():
+    neg_train_reviews = pickle.load(
+        open(input("Enter name of neg training data pickle: "), "rb"))
+    pos_train_reviews = pickle.load(
+        open(input("Enter name of pos training data pickle: "), "rb"))
+    neg_test_reviews = pickle.load(
+        open(input("Enter name of neg test data pickle: "), "rb"))
+    pos_test_reviews = pickle.load(
+        open(input("Enter name of pos test data pickle: "), "rb"))
+    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
+                        level=logging.INFO)
+
+    neg_training_sents = [s[:-2] for s in neg_train_reviews]
+    pos_training_sents = [s[:-2] for s in pos_train_reviews]
+    neg_test_sents = [s[:-2] for s in neg_test_reviews]
+    pos_test_sents = [s[:-2] for s in pos_test_reviews]
+
+    sents = list()
+    neg_training_sents.extend(pos_training_sents)
+    sents.extend(neg_test_sents)
+    sents.extend(pos_test_sents)
+    random.shuffle(sents)
+
+    return sents
 
 if __name__ == '__main__':
     isfilesaved = False
-    sentences = openpickle()
-    dotrainw2v = input("Would you like to train w2v model (y/n)?")
-    if dotrainw2v == 'y':
-        logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
-                            level=logging.INFO)
-        model = openw2v()
-        print(model.doesnt_match("man woman child kitchen".split()))
-        print(model.most_similar(positive=['woman', 'king'], negative=['man'], topn=10))
-        # print(type(model.syn0))
-        # print(model.syn0.shape)
+    option = input("What would you like to do?")
+    print("1: Process data\n2: Train w2vec model\n3: Train RNN")
+    if option == '1':
+        util.prepreprocessdata()
+    elif option == '2':
+        sents = prepare_w2v_train()
+        train_w2v_model(sents)
+
+        # model = openw2v()
+        # print(model.doesnt_match("man woman child kitchen".split()))
+        # print(model.most_similar(positive=['woman', 'king'], negative=['man'], topn=10))
+    elif option == '3':
+        neg_training_data = input("Enter name of neg training data pickle: ")
+        pos_training_data = input("Enter name of pos training data pickle: ")
+        trainingdata = util.combinedata(neg_training_data, pos_training_data)
+        training_sents = [review[:-2] for review in trainingdata]
+        training_labels = [review[-1] for review in trainingdata]
+
+        neg_test_data = input("Enter name of neg training data pickle: ")
+        pos_test_data = input("Enter name of pos training data pickle: ")
+        testdata = util.combinedata(neg_test_data, pos_test_data)
+        test_sents = [review[:-2] for review in testdata]
+        test_labels = [review[-1] for review in testdata]
+
     else:
         exit(0)
 
@@ -88,4 +101,3 @@ if __name__ == '__main__':
     #                              stop_words=None)
 
     # model.init_sims(replace=True)
-
