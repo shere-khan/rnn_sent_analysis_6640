@@ -32,7 +32,7 @@ def processfiles(files, label):
     return data
 
 def getwords(review, remove_sw=False):
-    review = BeautifulSoup(review, 'lxml').get_text()
+    review = BeautifulSoup(review).get_text()
     review = remove_emoji_and_nums(review)
     words = review.lower().split()
     if remove_sw:
@@ -54,14 +54,27 @@ def prepreprocessdata():
     # todo note # of pos reviews for train and test is equal
     cap = -1
 
-    # testneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/neg'
-    # test_neg_files = get_files_in_dir(testneg)
-    # testdata = processfiles(test_neg_files[:cap], 0)
+    # Process test data
+    print("Processing test data...")
+    testneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/neg'
+    test_neg_files = get_files_in_dir(testneg)
+    testdata = processfiles(test_neg_files[:cap], 0)
 
-    # testpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/pos'
-    # test_pos_files = get_files_in_dir(testpos)
-    # testdata.extend(processfiles(test_pos_files[:cap], 1))
+    testpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/pos'
+    test_pos_files = get_files_in_dir(testpos)
+    testdata.extend(processfiles(test_pos_files[:cap], 1))
 
+    tokr = load('tokenizers/punkt/english.pickle')
+
+    testsentences = list()
+    for review in testdata:
+        testsentences += getsentences(review, tokr)
+
+    print("Creating test data pickle")
+    pickle.dump(testsentences, open(input("Enter pickle name for train: "), "wb"))
+
+    # Process training data
+    print("Processing training data...")
     trainneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/train/neg'
     train_neg_files = get_files_in_dir(trainneg)
     traindata = processfiles(train_neg_files[:cap], 0)
@@ -70,12 +83,11 @@ def prepreprocessdata():
     train_pos_files = get_files_in_dir(trainpos)
     traindata.extend(processfiles(train_pos_files[:cap], 1))
 
-    tokr = load('tokenizers/punkt/english.pickle')
-
     sentences = list()
     for review in traindata:
         sentences += getsentences(review, tokr)
 
-    pickle.dump(sentences, open(input("Enter pickle name: "), "wb"))
+    print("Creating training data pickle")
+    pickle.dump(sentences, open(input("Enter pickle name for train: "), "wb"))
 
     return sentences

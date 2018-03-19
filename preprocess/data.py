@@ -22,16 +22,25 @@ def train_w2v_model(sentences):
     return model
 
 def openpickle():
-    fn = input("Enter the pickle name: ")
     doesfileexist = True
-    sentences = None
-    while not os.path.isfile(fn):
-        fn = input("File does not exist, would you like to reprocess data (y/n)?")
+    if input("Load data pickle (y/n)?") == 'y':
+        fn = input("Enter the pickle name: ")
+        while not os.path.isfile(fn):
+            fn = input("File does not exist, would you like to reprocess data (y/n)?")
+            if fn == 'y':
+                doesfileexist = False
+                sentences = util.prepreprocessdata()
+            else:
+                fn = input("Enter filename?")
+    else: # process file
+        sentences = None
+        fn = input("Would you like to process data (y/n)?")
         if fn == 'y':
             doesfileexist = False
             sentences = util.prepreprocessdata()
         else:
-            fn = input("Enter filename?")
+            exit(0)
+
 
     if doesfileexist:
         sentences = pickle.load(open(fn, "rb"))
