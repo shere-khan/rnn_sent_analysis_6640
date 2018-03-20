@@ -85,6 +85,18 @@ def get_len_longest_sentence(reviews):
 
     return longest
 
+def transform_reviews_to_word_vectors(reviews, model):
+    longest = 0
+    data = []
+    labels = []
+    vocab = set(model.wv.vocab)
+    for rev in reviews:
+        data1 = [model[d] for d in rev[0] if d in vocab]
+        longest = max(longest, len(data1))
+        labels.append(rev[1])
+        data.append(np.array(data1))
+
+    return np.array(data), np.array(labels), longest
 
 def create_review_avgs_and_labels(reviews, model):
     vocab = set(model.wv.vocab)
@@ -108,7 +120,6 @@ def create_review_avgs_and_labels(reviews, model):
         labels.append(rev[1])
 
     return np.array(features), np.array(labels)
-
 
 def split_sents_and_labels(reviews):
     sents = [review[0] for review in reviews]
@@ -146,5 +157,4 @@ def prepreprocessdata(cap=1000):
         labled_test_reviews = combinedata(test_neg_sents, test_pos_sents)
 
         print("Creating pickle for processed data")
-        pickle.dump(labled_test_reviews , open(input("Enter pickle name: "), "wb"))
-
+        pickle.dump(labled_test_reviews, open(input("Enter pickle name: "), "wb"))

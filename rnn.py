@@ -4,9 +4,8 @@ from keras.layers import Dense, LSTM, Dropout
 from keras.models import Sequential
 
 
-def train(model, trainingdata, testdata):
+def train(trainingdata, testdata, timesteps):
     # Model params
-    timesteps = 350
     dim = 300
     batch_size = 64
     epochs_number = 40
@@ -18,7 +17,7 @@ def train(model, trainingdata, testdata):
     model.add(Dense(1, activation='sigmoid'))
     model.compile(loss="binary_crossentropy", optimizer='rmsprop', metrics=['accuracy'])
 
-    fname = 'weights/keras-lstm.h5'
+    fname = 'data/weights.h5'
     if os.path.isfile(fname):
         model.load_weights(fname)
 
