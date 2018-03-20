@@ -1,4 +1,4 @@
-import os, re, pickle, random
+import os, re, pickle, random, numpy as np
 from nltk.data import load
 from nltk.corpus import stopwords
 from bs4 import BeautifulSoup
@@ -74,13 +74,26 @@ def extract_sentences_and_flatten(reviews):
 
     return sents
 
-def create_review_avgs(reviews, model):
-    vocab = set(model.index2word)
-    # for rev in reviews:
+def create_review_avgs_and_labels(reviews, model):
+    vocab = set(model.wv.vocab)
+    features = list()
+    labels = list()
+    for rev in reviews:
+        fvec = np.zeros(model.vector_size, dtype=np.float32)
+        wordct = 0
+        for w in rev[0]:
+            if w in vocab:
+                wordct += 1
+                fvec = np.add(fvec, model[w])
+        fvec = np.divide(fvec, wordct)
+        features.append(fvec)
+        labels.append(rev[1])
+
+    return np.array(features), np.array(labels)
 
 
 def split_sents_and_labels(reviews):
-    sents = [review[:0] for review in reviews]
+    sents = [review[0] for review in reviews]
     labels = [review[1] for review in reviews]
 
     return sents, labels

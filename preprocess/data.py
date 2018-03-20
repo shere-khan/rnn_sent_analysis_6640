@@ -60,11 +60,11 @@ if __name__ == '__main__':
 
         train_reviews = pickle.load(
             open(input("Enter name of training data pickle: "), "rb"))
-        traindata = util.create_review_avgs(train_reviews, model)
+        traindata = util.create_review_avgs_and_labels(train_reviews, model)
 
         test_reviews = pickle.load(
             open(input("Enter name of test data pickle: "), "rb"))
-        testdata = util.create_review_avgs(test_reviews, model)
+        testdata = util.create_review_avgs_and_labels(test_reviews, model)
 
         rnn.train(model, traindata, testdata)
     else:
