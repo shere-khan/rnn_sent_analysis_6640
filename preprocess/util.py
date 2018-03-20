@@ -86,17 +86,15 @@ def get_len_longest_sentence(reviews):
     return longest
 
 def transform_reviews_to_word_vectors(reviews, model):
-    longest = 0
     data = []
     labels = []
     vocab = set(model.wv.vocab)
     for rev in reviews:
         data1 = [model[d] for d in rev[0] if d in vocab]
-        longest = max(longest, len(data1))
         labels.append(rev[1])
         data.append(np.array(data1))
 
-    return np.array(data), np.array(labels), longest
+    return np.array(data), np.array(labels)
 
 def create_review_avgs_and_labels(reviews, model):
     vocab = set(model.wv.vocab)

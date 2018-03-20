@@ -66,17 +66,15 @@ if __name__ == '__main__':
         #     open(input("Enter name of training data pickle: "), "rb"))
         train_reviews = pickle.load(open("data/train.p", "rb"))
         # traindata = util.create_review_avgs_and_labels(train_reviews, model)
-        trainsents, trainlabels, ltrain = util.transform_reviews_to_word_vectors(
+        trainsents, trainlabels = util.transform_reviews_to_word_vectors(
             train_reviews, model)
 
         # test_reviews = pickle.load(
         #     open(input("Enter name of test data pickle: "), "rb"))
         test_reviews = pickle.load(open("data/test.p", "rb"))
         # testdata = util.create_review_avgs_and_labels(test_reviews, model)
-        testsents, testlabels, ltest = util.transform_reviews_to_word_vectors(
+        testsents, testlabels = util.transform_reviews_to_word_vectors(
             test_reviews, model)
-
-        longest = max(ltrain, ltest)
 
         # Pad sequences
         trainfeats = sequence.pad_sequences(trainsents[0], padding='post',
@@ -88,18 +86,19 @@ if __name__ == '__main__':
     elif option == '4':
         pass
     elif option == '5':
+        dist = [len(s) for s in []]
         # dist = [len(s) for s in testsents]
-        # l = np.random.randn(10)
-        # print('dkf')
+        l = np.random.randn(10)
+        print('dkf')
 
-        # plt.hist(np.array(dist))
-        # plt.xlabel("Lengths")
-        # plt.ylabel("Freq")
+        plt.hist(np.array(dist))
+        plt.xlabel("Lengths")
+        plt.ylabel("Freq")
 
-        # py.tools.set_credentials_file(username='jbarry', api_key='NxzNmvLGLfOXz9xjF2HI')
+        py.tools.set_credentials_file(username='jbarry', api_key='NxzNmvLGLfOXz9xjF2HI')
 
-        # fig = plt.gcf()
-        # ploturl = py.plotly.plot_mpl(fig, filename='hist')
+        fig = plt.gcf()
+        ploturl = py.plotly.plot_mpl(fig, filename='nlp.6640.rnn.seqeunce_length.dist')
     else:
         exit(0)
 
