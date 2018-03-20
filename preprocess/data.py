@@ -11,6 +11,8 @@ def train_w2v_model(sentences):
     context = 10  # Context window size
     downsampling = 1e-3  # Downsample setting for frequent words
 
+    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
+                        level=logging.INFO)
     print("W2V training...")
     model = Word2Vec(sentences, workers=num_workers, size=num_features,
                      min_count=min_word_count, window=context, sample=downsampling,
@@ -38,41 +40,33 @@ def openw2v(sentences):
 
     return model
 
-def prepare_w2v_train():
-    train_reviews = pickle.load(
-        open(input("Enter name of training data pickle: "), "rb"))
-    test_reviews = pickle.load(
-        open(input("Enter name of test data pickle: "), "rb"))
-
-    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
-                        level=logging.INFO)
-
-    sents = util.extract_sentences_and_flatten(train_reviews)
-    sents.extend(util.extract_sentences_and_flatten(test_reviews))
-
-    return sents
-
 if __name__ == '__main__':
     isfilesaved = False
     print("What would you like to do?")
     print("1: Process data\n2: Train w2vec model\n3: Train RNN")
     option = input("input: ")
     if option == '1':
-        util.prepreprocessdata(input("Cap: "))
+        util.prepreprocessdata(int(input("Cap: ")))
     elif option == '2':
-        sents = prepare_w2v_train()
-        train_w2v_model(sents)
-    elif option == '3':
         train_reviews = pickle.load(
             open(input("Enter name of training data pickle: "), "rb"))
+        test_reviews = pickle.load(
+            open(input("Enter name of test data pickle: "), "rb"))
+        sents = [r[0] for r in train_reviews]
+        sents.extend([r[0] for r in test_reviews])
+        train_w2v_model(sents)
+    elif option == '3':
+        model = pickle.load(open(input("Enter model name: "), "rb"))
 
-        # training_sents, training_label = util.split_sents_and_labels(train_reviews)
+        train_reviews = pickle.load(
+            open(input("Enter name of training data pickle: "), "rb"))
+        traindata = util.create_review_avgs(train_reviews, model)
 
-        # test_reviews = pickle.load(
-        #     open(input("Enter name of test data pickle: "), "rb"))
-        # test_sents, test_label = util.split_sents_and_labels(train_reviews)
+        test_reviews = pickle.load(
+            open(input("Enter name of test data pickle: "), "rb"))
+        testdata = util.create_review_avgs(test_reviews, model)
 
-        # rnn.train()
+        rnn.train(model, traindata, testdata)
     else:
         exit(0)
 

@@ -2,7 +2,6 @@ import os, re, pickle, random
 from nltk.data import load
 from nltk.corpus import stopwords
 from bs4 import BeautifulSoup
-import numpy as np
 
 
 stops = set(stopwords.words('english'))
@@ -28,7 +27,7 @@ def processfiles(files, label):
     for file in files:
         with open(file) as f:
             for line in f:
-                data.append((line, label))
+                data.append((line, [label]))
 
     return data
 
@@ -46,9 +45,9 @@ def getsentences(review, tokenizer, remove_sw=False):
     sents = list()
     for raw in raws:
         if len(raw) > 0:
-            sents.append((getwords(raw, remove_sw), review[1]))
+            sents += getwords(raw, remove_sw)
 
-    return sents
+    return sents, review[1]
 
 def combinedata(neg, pos):
     neg.extend(pos)
@@ -77,21 +76,12 @@ def extract_sentences_and_flatten(reviews):
 
 def create_review_avgs(reviews, model):
     vocab = set(model.index2word)
-    for rev in reviews:
-        for r in rev[0]:
-            words = r.split()
-            for w in words:
-                if w in vocab:
-                    pass
-                    # feat_vec = np.add(feat_vec, model[w])
-
-
-
+    # for rev in reviews:
 
 
 def split_sents_and_labels(reviews):
-    sents = [review[:-2] for review in reviews]
-    labels = [review[-1] for review in reviews]
+    sents = [review[:0] for review in reviews]
+    labels = [review[1] for review in reviews]
 
     return sents, labels
 
