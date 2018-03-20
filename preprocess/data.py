@@ -2,6 +2,7 @@ import pickle, os, rnn
 import logging
 from gensim.models import Word2Vec
 from preprocess import util
+from keras.preprocessing import sequence
 
 
 def train_w2v_model(sentences):
@@ -43,7 +44,8 @@ def openw2v(sentences):
 if __name__ == '__main__':
     isfilesaved = False
     print("What would you like to do?")
-    print("1: Process data\n2: Train w2vec model\n3: Train RNN")
+    print("1: Process data\n2: Train w2vec model\n3: Train RNN"
+          "\n4: Pad data")
     option = input("input: ")
     if option == '1':
         util.prepreprocessdata(int(input("Cap: ")))
@@ -66,7 +68,20 @@ if __name__ == '__main__':
             open(input("Enter name of test data pickle: "), "rb"))
         testdata = util.create_review_avgs_and_labels(test_reviews, model)
 
+        # ltrain = util.get_len_longest_sentence(train_reviews)
+        # ltest = util.get_len_longest_sentence(test_reviews)
+        # longest = max(ltrain, ltest)
+        # exit(0)
+
+        # Pad sequences
+        # trainfeats = sequence.pad_sequences(traindata[0], padding='post',
+        #                                     dtype='float32', maxlen=longest, value=0)
+        # testfeats = sequence.pad_sequences(traindata[0], padding='post',
+        #                                     dtype='float32', maxlen=longest, value=0)
+
         rnn.train(model, traindata, testdata)
+    elif option == '4':
+        pass
     else:
         exit(0)
 

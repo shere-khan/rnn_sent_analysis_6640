@@ -74,10 +74,24 @@ def extract_sentences_and_flatten(reviews):
 
     return sents
 
+def get_len_longest_sentence(reviews):
+    longest = 0
+    for rev in reviews:
+        length = len(rev[0])
+        if length > longest:
+            print(length)
+            longest = length
+            # longest = max(longest, len(rev[0]))
+
+    return longest
+
+
 def create_review_avgs_and_labels(reviews, model):
     vocab = set(model.wv.vocab)
+    print('vocab len: ', len(vocab))
     features = list()
     labels = list()
+    length = 0
     for rev in reviews:
         fvec = np.zeros(model.vector_size, dtype=np.float32)
         wordct = 0
@@ -87,6 +101,10 @@ def create_review_avgs_and_labels(reviews, model):
                 fvec = np.add(fvec, model[w])
         fvec = np.divide(fvec, wordct)
         features.append(fvec)
+        size = len(fvec)
+        if size > length:
+            print('size fvec: ', size)
+            length = size
         labels.append(rev[1])
 
     return np.array(features), np.array(labels)
