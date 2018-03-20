@@ -1,8 +1,7 @@
-import pickle, sys, os, random
+import pickle, os, rnn
 import logging
 from gensim.models import Word2Vec
 from preprocess import util
-from keras import backend
 
 
 def train_w2v_model(sentences):
@@ -40,56 +39,40 @@ def openw2v(sentences):
     return model
 
 def prepare_w2v_train():
-    neg_train_reviews = pickle.load(
-        open(input("Enter name of neg training data pickle: "), "rb"))
-    pos_train_reviews = pickle.load(
-        open(input("Enter name of pos training data pickle: "), "rb"))
-    neg_test_reviews = pickle.load(
-        open(input("Enter name of neg test data pickle: "), "rb"))
-    pos_test_reviews = pickle.load(
-        open(input("Enter name of pos test data pickle: "), "rb"))
+    train_reviews = pickle.load(
+        open(input("Enter name of training data pickle: "), "rb"))
+    test_reviews = pickle.load(
+        open(input("Enter name of test data pickle: "), "rb"))
+
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=logging.INFO)
 
-    neg_training_sents = [s[:-2] for s in neg_train_reviews]
-    pos_training_sents = [s[:-2] for s in pos_train_reviews]
-    neg_test_sents = [s[:-2] for s in neg_test_reviews]
-    pos_test_sents = [s[:-2] for s in pos_test_reviews]
-
-    sents = list()
-    neg_training_sents.extend(pos_training_sents)
-    sents.extend(neg_test_sents)
-    sents.extend(pos_test_sents)
-    random.shuffle(sents)
+    sents = util.extract_sentences_and_flatten(train_reviews)
+    sents.extend(util.extract_sentences_and_flatten(test_reviews))
 
     return sents
 
 if __name__ == '__main__':
     isfilesaved = False
-    option = input("What would you like to do?")
+    print("What would you like to do?")
     print("1: Process data\n2: Train w2vec model\n3: Train RNN")
+    option = input("input: ")
     if option == '1':
-        util.prepreprocessdata()
+        util.prepreprocessdata(input("Cap: "))
     elif option == '2':
         sents = prepare_w2v_train()
         train_w2v_model(sents)
-
-        # model = openw2v()
-        # print(model.doesnt_match("man woman child kitchen".split()))
-        # print(model.most_similar(positive=['woman', 'king'], negative=['man'], topn=10))
     elif option == '3':
-        neg_training_data = input("Enter name of neg training data pickle: ")
-        pos_training_data = input("Enter name of pos training data pickle: ")
-        trainingdata = util.combinedata(neg_training_data, pos_training_data)
-        training_sents = [review[:-2] for review in trainingdata]
-        training_labels = [review[-1] for review in trainingdata]
+        train_reviews = pickle.load(
+            open(input("Enter name of training data pickle: "), "rb"))
 
-        neg_test_data = input("Enter name of neg training data pickle: ")
-        pos_test_data = input("Enter name of pos training data pickle: ")
-        testdata = util.combinedata(neg_test_data, pos_test_data)
-        test_sents = [review[:-2] for review in testdata]
-        test_labels = [review[-1] for review in testdata]
+        # training_sents, training_label = util.split_sents_and_labels(train_reviews)
 
+        # test_reviews = pickle.load(
+        #     open(input("Enter name of test data pickle: "), "rb"))
+        # test_sents, test_label = util.split_sents_and_labels(train_reviews)
+
+        # rnn.train()
     else:
         exit(0)
 
@@ -101,3 +84,7 @@ if __name__ == '__main__':
     #                              stop_words=None)
 
     # model.init_sims(replace=True)
+
+    # model = openw2v()
+    # print(model.doesnt_match("man woman child kitchen".split()))
+    # print(model.most_similar(positive=['woman', 'king'], negative=['man'], topn=10))

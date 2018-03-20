@@ -11,3 +11,4 @@ tf.log
 aclImdb/*
 *.p
 word2vecmodel
+w2v
