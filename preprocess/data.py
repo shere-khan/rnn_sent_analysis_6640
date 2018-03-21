@@ -62,27 +62,22 @@ if __name__ == '__main__':
         # model = pickle.load(open(input("Enter model name: "), "rb"))
         model = pickle.load(open("data/w2v", "rb"))
 
-        # train_reviews = pickle.load(
-        #     open(input("Enter name of training data pickle: "), "rb"))
         train_reviews = pickle.load(open("data/train.p", "rb"))
-        # traindata = util.create_review_avgs_and_labels(train_reviews, model)
         trainsents, trainlabels = util.transform_reviews_to_word_vectors(
             train_reviews, model)
 
-        # test_reviews = pickle.load(
-        #     open(input("Enter name of test data pickle: "), "rb"))
         test_reviews = pickle.load(open("data/test.p", "rb"))
-        # testdata = util.create_review_avgs_and_labels(test_reviews, model)
         testsents, testlabels = util.transform_reviews_to_word_vectors(
             test_reviews, model)
 
+        seq_length = 550
         # Pad sequences
         trainfeats = sequence.pad_sequences(trainsents[0], padding='post',
-                                            dtype='float32', maxlen=longest, value=0)
+                                            dtype='float32', maxlen=seq_length, value=0)
         testfeats = sequence.pad_sequences(testsents[0], padding='post',
-                                           dtype='float32', maxlen=longest, value=0)
+                                           dtype='float32', maxlen=seq_length, value=0)
 
-        rnn.train(trainsents, testsents, timesteps=longest)
+        rnn.train(trainsents, testsents, timesteps=seq_length)
     elif option == '4':
         pass
     elif option == '5':
