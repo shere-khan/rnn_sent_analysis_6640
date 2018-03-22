@@ -2,6 +2,7 @@ import os, re, pickle, random, numpy as np
 from nltk.data import load
 from nltk.corpus import stopwords
 from bs4 import BeautifulSoup
+from keras.preprocessing import sequence
 
 
 stops = set(stopwords.words('english'))
@@ -95,6 +96,16 @@ def transform_reviews_to_word_vectors(reviews, model):
         data.append(np.array(data1))
 
     return np.array(data), np.array(labels)
+
+def pad_sequences(review_text_list, seq_len, dim):
+    print("padding seq")
+    for review_text in review_text_list:
+        while len(review_text) < seq_len:
+            np.append(review_text, [0])
+    feature_vector = sequence.pad_sequences(review_text_list, padding='post', dtype='float32',
+                                            maxlen=dim, value=0)
+
+    return feature_vector
 
 def create_review_avgs_and_labels(reviews, model):
     vocab = set(model.wv.vocab)
