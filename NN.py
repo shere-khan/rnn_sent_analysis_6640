@@ -16,23 +16,19 @@ batch_size = 100
 lemmatizer = WordNetLemmatizer()
 hm_lines = 100000000
 
-def tok_and_lem(file, lexicon):
-    for f in os.listdir(file):
-        with open(file + f, 'r') as fi:
-            for l in fi:
-                words = word_tokenize(l.lower())
-                words = [w for w in words if w not in util.stops]
-                words = [lemmatizer.lemmatize(i) for i in words]
-                lexicon += list(set(words))
+def tok_and_lem(data, lexicon):
+    for d in data:
+        words = word_tokenize(l.lower())
+        words = [w for w in words if w not in util.stops]
+        words = [lemmatizer.lemmatize(i) for i in words]
+        lexicon += list(set(words))
 
-def create_lexicon(pos, neg, testpos, testneg):
+def create_lexicon(train, test):
     files, lexicon = [], []
     start = time.time()
 
-    tok_and_lem(pos, lexicon)
-    tok_and_lem(neg, lexicon)
-    tok_and_lem(testpos, lexicon)
-    tok_and_lem(testneg, lexicon)
+    tok_and_lem(train, lexicon)
+    tok_and_lem(test, lexicon)
 
     w_counts = Counter(lexicon)
 
@@ -93,13 +89,13 @@ def createfeats(data, lexicon):
 def create_feature_sets_and_labels(pos, neg, testpos, testneg, test_size=0.1):
     start = time.time()
 
+    training = pickle.load(open(input('training data name: '), "rb"))
+    test = pickle.load(open(input('test data name: '), "rb"))
+
     if input("load lexicon pickle (y/n)?") == "y":
         lexicon = pickle.load(open(input('lexicon name: '), "rb"))
     else:
-        lexicon = create_lexicon(pos, neg, testpos, testneg)
-
-    training = pickle.load(open(input('training data name: '), "rb"))
-    test = pickle.load(open(input('test data name: '), "rb"))
+        lexicon = create_lexicon(training, test)
 
     print("Creating training features")
     trainingfeats = createfeats(training, lexicon)
