@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import os, random, pickle, time
+import os, random, pickle, time, util
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from collections import Counter
@@ -21,6 +21,7 @@ def tok_and_lem(file, lexicon):
         with open(file + f, 'r') as fi:
             for l in fi:
                 words = word_tokenize(l.lower())
+                words = [w for w in words if w not in util.stops]
                 words = [lemmatizer.lemmatize(i) for i in words]
                 lexicon += list(set(words))
 
@@ -74,7 +75,9 @@ def createfeats(data, lexicon):
     featureset = []
     # todo change here to do averages
     for d in data:
-        current_words = [lemmatizer.lemmatize(i) for i in d[0]]
+        words = d[0]
+        # words = [w for w in words if w not in util.stops]
+        current_words = [lemmatizer.lemmatize(i) for i in words]
         features = np.zeros(len(lexicon))
 
         for word in current_words:
