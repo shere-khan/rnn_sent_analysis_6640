@@ -1,7 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from preprocess import util
-import os, nltk, random, pickle, time
+import os, random, pickle, time
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from collections import Counter
@@ -37,13 +36,19 @@ def create_lexicon(pos, neg, testpos, testneg):
     w_counts = Counter(lexicon)
 
     l2 = []
+    # todo create his with freqs to decide
     for w in w_counts:
-        if (250 > w_counts[w] > 1):
+        if 250 > w_counts[w] > 1:
             l2.append(w)
 
-    print("Lexicon size = ", len(l2))
+    print("Lexicon size = ", len(lexicon))
     print("Creating lexicon took %.8f seconds" % (time.time() - start))
-    return l2
+
+    inp = input("Enter pickle name: ")
+    print("entered")
+    pickle.dump(lexicon, open(inp, "wb"))
+
+    return lexicon
 
 def sample_handling(sample, lexicon, classification):
     featureset = []
@@ -67,20 +72,27 @@ def sample_handling(sample, lexicon, classification):
 
 def create_feature_sets_and_labels(pos, neg, testpos, testneg, test_size=0.1):
     start = time.time()
-    lexicon = create_lexicon(pos, neg, testpos, testneg)
+
+    if input("load lexicon pickle (y/n)?") == "y":
+        lexicon = pickle.load(open(input('lexicon name: '), "rb"))
+    else:
+        lexicon = create_lexicon(pos, neg, testpos, testneg)
     features = []
+    print("creating trianing features")
     for f in os.listdir(pos):
         features += sample_handling(pos + f, lexicon, [1, 0])
 
     for f in os.listdir(neg):
         features += sample_handling(neg + f, lexicon, [0, 1])
 
+    print("shuffling and np array'ing")
     random.shuffle(features)
     features = np.array(features)
 
     train_x = list(features[:, 0])
     train_y = list(features[:, 1])
 
+    print("creating test features")
     features = []
     for f in os.listdir(testpos):
         features += sample_handling(testpos + f, lexicon, [1, 0])
@@ -88,6 +100,7 @@ def create_feature_sets_and_labels(pos, neg, testpos, testneg, test_size=0.1):
     for f in os.listdir(testneg):
         features += sample_handling(testneg + f, lexicon, [0, 1])
 
+    print("shuffling and np array'ing")
     random.shuffle(features)
     features = np.array(features)
 
@@ -172,8 +185,10 @@ if __name__ == '__main__':
     train_x, train_y, test_x, test_y = create_feature_sets_and_labels(pos, neg, testpos,
                                                                       testneg)
 
-    # with open('sentiment_set.pickle', 'wb') as f:
-    #	pickle.dump([train_x,train_y,test_x,test_y],f)
+    pickle.dump(train_x, open('train_x.p', 'wb'))
+    pickle.dump(train_y, open('train_y.p', 'wb'))
+    pickle.dump(test_x, open('test_x.p', 'wb'))
+    pickle.dump(test_y, open('test_y.p', 'wb'))
 
     x = tf.placeholder('float', [None, len(train_x[0])])
     y = tf.placeholder('float')

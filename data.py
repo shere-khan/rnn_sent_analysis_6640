@@ -1,9 +1,8 @@
-import pickle, os, rnn, numpy as np
+import pickle, os, numpy as np
 import logging, pylab as plt
 import plotly as py
 from gensim.models import Word2Vec
-from preprocess import util
-from keras.preprocessing import sequence
+import util
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
@@ -74,7 +73,7 @@ def ranforest():
 
     print("Test acc: {0}".format(testacc))
 
-def rnn():
+def recursive_nn():
     # model = pickle.load(open(input("Enter model name: "), "rb"))
     model = pickle.load(open("data/w2v", "rb"))
 
@@ -135,7 +134,7 @@ if __name__ == '__main__':
     elif option == '2':
         trainw2voption()
     elif option == '3':
-        rnn()
+        recursive_nn()
     elif option == '4':  # Use RF classifier
         ranforest()
     elif option == '5':  # plot histogram of sequence lengths
