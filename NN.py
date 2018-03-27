@@ -4,6 +4,7 @@ import os, random, pickle, time, util
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from collections import Counter
+from sklearn.feature_extraction.text import CountVectorizer
 
 
 n_nodes_hl1 = 500
@@ -47,26 +48,6 @@ def create_lexicon(train, test):
 
     return lexicon
 
-def sample_handling(sample, lexicon, classification):
-    featureset = []
-    with open(sample, 'r') as f:
-        contents = f.readlines()
-        # todo change here to do averages
-        for l in contents[:hm_lines]:
-            current_words = word_tokenize(l.lower())
-            current_words = [lemmatizer.lemmatize(i) for i in current_words]
-            features = np.zeros(len(lexicon))
-
-            for word in current_words:
-                if word.lower() in lexicon:
-                    index_value = lexicon.index(word.lower())
-                    features[index_value] += 1
-
-            features = list(features)
-            featureset.append([features, classification])
-
-    return featureset
-
 def createfeats(data, lexicon):
     featureset = []
     # todo change here to do averages
@@ -97,21 +78,33 @@ def create_feature_sets_and_labels(pos, neg, testpos, testneg, test_size=0.1):
     else:
         lexicon = create_lexicon(training, test)
 
-    print("Creating training features")
-    trainingfeats = createfeats(training, lexicon)
-    print("Creating test features")
-    testfeats = createfeats(test, lexicon)
+    vectorizer = CountVectorizer(analyzer="word", tokenizer=None, preprocessor=None,
+                                 stop_words=None, max_features=5000)
 
-    trainingfeats = np.array(trainingfeats)
-    train_x = list(trainingfeats[:, 0])
-    train_y = list(trainingfeats[:, 1])
 
-    testfeats = np.array(testfeats)
-    test_x = list(testfeats [:, 0])
-    test_y = list(testfeats [:, 1])
+    trainclean, trainy = util.extract_clean_reviews(training)
+    testclean, testy = util.extract_clean_reviews(test)
+
+    print("vectorizing training data")
+    trainx = vectorizer.fit_transform(trainclean).toarray()
+    print("vectorizing test data")
+    testx = vectorizer.fit_transform(testclean).toarray()
+
+    # print("Creating training features")
+    # trainingfeats = createfeats(training, lexicon)
+    # print("Creating test features")
+    # testfeats = createfeats(test, lexicon)
+    #
+    # trainingfeats = np.array(trainingfeats)
+    # train_x = list(trainingfeats[:, 0])
+    # train_y = list(trainingfeats[:, 1])
+    #
+    # testfeats = np.array(testfeats)
+    # test_x = list(testfeats [:, 0])
+    # test_y = list(testfeats [:, 1])
 
     print("Creating Sets and Labels took %.8f seconds" % (time.time() - start))
-    return train_x, train_y, test_x, test_y
+    return trainx, trainy, testx,testy
 
 def neural_network_model(data, train_x):
     start = time.time()

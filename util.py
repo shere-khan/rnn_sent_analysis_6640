@@ -7,6 +7,15 @@ from keras.preprocessing import sequence
 
 stops = set(stopwords.words('english'))
 
+def extract_clean_reviews(data):
+    cleanreviews = []
+    labels = []
+    for d in data:
+        cleanreviews.append(" ".join(d[0]))
+        labels.append(d[1])
+
+    return cleanreviews, labels
+
 def get_files_in_dir(dir):
     files = list()
     for file in os.listdir(dir):

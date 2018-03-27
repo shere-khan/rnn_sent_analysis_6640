@@ -6,7 +6,6 @@ import util
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-
 def train_w2v_model(sentences):
     num_features = 300  # Word vector dimensionality
     min_word_count = 40  # Minimum word count
