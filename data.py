@@ -139,6 +139,10 @@ if __name__ == '__main__':
         ranforest()
     elif option == '5':  # plot histogram of sequence lengths
         plothist()
+    elif option == '6':
+        train = pickle.load(open("data/train.p", "rb"))
+        test = pickle.load(open("data/test.p", "rb"))
+
 
     # stpl: something to play with
     # todo stpl max_features
