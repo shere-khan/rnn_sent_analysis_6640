@@ -56,14 +56,14 @@ def combinedata(neg, pos):
 
     return neg
 
-def extractdata(fn, cap, tokr, label):
+def extractdata(fn, cap, tokr, label, sw):
     print("Processing data...")
     files = get_files_in_dir(fn)
     data = processfiles(files[:cap], label)
 
     sents = list()
     for one_line_one_review in data:
-        sents.append(getsentences(one_line_one_review, tokr))
+        sents.append(getsentences(one_line_one_review, tokr, sw))
 
     return sents
 
@@ -140,30 +140,32 @@ def prepreprocessdata(cap=1000):
     # todo stpl size of trianing set test set
     # todo note # of pos reviews for train and test is equal
     tokr = load('tokenizers/punkt/english.pickle')
+    sw = True
 
-    if input("Process training data (y/n)?") == 'y':
+    if input("Process data (y/n)?") == 'y':
+        trainfn = input("Enter filename for training pickle: ")
+        testfn = input("Enter filename for test pickle: ")
         # Process training data
         print("Processing training data...")
-        trainneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/train/neg'
-        train_neg_sents = extractdata(trainneg, cap, tokr, 0)
+        trainneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/dataset/train/neg'
+        train_neg_sents = extractdata(trainneg, cap, tokr, 0, sw)
 
-        trainpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/train/pos'
-        train_pos_sents = extractdata(trainpos, cap, tokr, 1)
+        trainpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/dataset/train/pos'
+        train_pos_sents = extractdata(trainpos, cap, tokr, 1, sw)
 
         labled_train_reviews = combinedata(train_neg_sents, train_pos_sents)
 
         print("Creating pickle for processed data")
-        pickle.dump(labled_train_reviews, open(input("Enter pickle name: "), "wb"))
+        pickle.dump(labled_train_reviews, open(trainfn, "wb"))
 
-    if input("Process test data (y/n)?") == 'y':
         # Process test data
         print("Processing test data...")
-        testneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/neg'
-        test_neg_sents = extractdata(testneg, cap, tokr, 0)
-        testpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/aclImdb/test/pos'
-        test_pos_sents = extractdata(testpos, cap, tokr, 1)
+        testneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/dataset/test/neg'
+        test_neg_sents = extractdata(testneg, cap, tokr, 0, sw)
+        testpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/dataset/test/pos'
+        test_pos_sents = extractdata(testpos, cap, tokr, 1, sw)
 
         labled_test_reviews = combinedata(test_neg_sents, test_pos_sents)
 
         print("Creating pickle for processed data")
-        pickle.dump(labled_test_reviews, open(input("Enter pickle name: "), "wb"))
+        pickle.dump(labled_test_reviews, open(testfn, "wb"))

@@ -61,12 +61,29 @@ def sample_handling(sample, lexicon, classification):
             features = np.zeros(len(lexicon))
 
             for word in current_words:
-                if (word.lower() in lexicon):
+                if word.lower() in lexicon:
                     index_value = lexicon.index(word.lower())
                     features[index_value] += 1
 
             features = list(features)
             featureset.append([features, classification])
+
+    return featureset
+
+def createfeats(data, lexicon):
+    featureset = []
+    # todo change here to do averages
+    for d in data:
+        current_words = [lemmatizer.lemmatize(i) for i in d[0]]
+        features = np.zeros(len(lexicon))
+
+        for word in current_words:
+            if word in lexicon:
+                index_value = lexicon.index(word)
+                features[index_value] += 1
+
+        features = list(features)
+        featureset.append([features, d[1]])
 
     return featureset
 
@@ -77,35 +94,22 @@ def create_feature_sets_and_labels(pos, neg, testpos, testneg, test_size=0.1):
         lexicon = pickle.load(open(input('lexicon name: '), "rb"))
     else:
         lexicon = create_lexicon(pos, neg, testpos, testneg)
-    features = []
-    print("creating trianing features")
-    for f in os.listdir(pos):
-        features += sample_handling(pos + f, lexicon, [1, 0])
 
-    for f in os.listdir(neg):
-        features += sample_handling(neg + f, lexicon, [0, 1])
+    training = pickle.load(open(input('training data name: '), "rb"))
+    test = pickle.load(open(input('test data name: '), "rb"))
 
-    print("shuffling and np array'ing")
-    random.shuffle(features)
-    features = np.array(features)
+    print("Creating training features")
+    trainingfeats = createfeats(training, lexicon)
+    print("Creating test features")
+    testfeats = createfeats(test, lexicon)
 
-    train_x = list(features[:, 0])
-    train_y = list(features[:, 1])
+    trainingfeats = np.array(trainingfeats)
+    train_x = list(trainingfeats[:, 0])
+    train_y = list(trainingfeats[:, 1])
 
-    print("creating test features")
-    features = []
-    for f in os.listdir(testpos):
-        features += sample_handling(testpos + f, lexicon, [1, 0])
-
-    for f in os.listdir(testneg):
-        features += sample_handling(testneg + f, lexicon, [0, 1])
-
-    print("shuffling and np array'ing")
-    random.shuffle(features)
-    features = np.array(features)
-
-    test_x = list(features[:, 0])
-    test_y = list(features[:, 1])
+    testfeats = np.array(testfeats)
+    test_x = list(testfeats [:, 0])
+    test_y = list(testfeats [:, 1])
 
     print("Creating Sets and Labels took %.8f seconds" % (time.time() - start))
     return train_x, train_y, test_x, test_y
