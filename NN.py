@@ -39,6 +39,7 @@ def create_lexicon(train, test):
         if 250 > w_counts[w] > 1:
             l2.append(w)
 
+
     print("Lexicon size = ", len(lexicon))
     print("Creating lexicon took %.8f seconds" % (time.time() - start))
 
@@ -144,7 +145,7 @@ def train_neural_network(x, train_x, train_y, test_x, test_y, y):
         tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction, labels=y))
     optimizer = tf.train.AdamOptimizer().minimize(cost)
 
-    hm_epochs = 10
+    hm_epochs = 14
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
 

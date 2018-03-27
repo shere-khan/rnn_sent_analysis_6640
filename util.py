@@ -12,7 +12,8 @@ def extract_clean_reviews(data):
     labels = []
     for d in data:
         cleanreviews.append(" ".join(d[0]))
-        labels.append(d[1])
+        l = [1, 0] if d[1][0] == 1 else [0, 1]
+        labels.append(l)
 
     return cleanreviews, labels
 
