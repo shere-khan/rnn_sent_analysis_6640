@@ -19,8 +19,8 @@ hm_lines = 100000000
 
 def tok_and_lem(data, lexicon):
     for d in data:
-        words = word_tokenize(l.lower())
-        words = [w for w in words if w not in util.stops]
+        # words = word_tokenize(l.lower())
+        words = [w for w in d[0] if w not in util.stops]
         words = [lemmatizer.lemmatize(i) for i in words]
         lexicon += list(set(words))
 
