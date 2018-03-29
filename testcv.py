@@ -1,4 +1,4 @@
-import util, pickle, numpy as np, time
+import util, pickle, numpy as np, time, math
 from sklearn.feature_extraction.text import CountVectorizer
 import tensorflow as tf
 from nltk import word_tokenize
@@ -13,35 +13,44 @@ filenames = ['/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/train/
              '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/pos/']
 
 n_classes = 2
-batch_size = 100
-n_nodes_hl1 = 750
-n_nodes_hl2 = 750
-n_nodes_hl3 = 750
+batch_size = 24000
+n_nodes_hl1 = 1000
+n_nodes_hl2 = 1000
+n_nodes_hl3 = 1000
 lemmatizer = WordNetLemmatizer()
 hm_lines = 100000000
 
-total_batches = int(1600000 / batch_size)
+total_batches = int(50000 / batch_size)
 
 tf_log = 'tf.log'
 
 def vectorizeexample():
     data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
-                                  '/data/processed/'])
+                                  '/data/processed/'], cap=10)
 
     vectorizer = CountVectorizer(analyzer="word", preprocessor=None, max_features=1000)
 
     train = [x[0] for x in data]
 
     vectorizer.fit_transform(train)
-    print(vectorizer.vocabulary_)
-    pickle.dump(vectorizer, open("data/bow_mod1000", "wb"))
+    # print(vectorizer.vocabulary_)
+    for d in data:
+        feats = vectorizer.transform([d[0]])
+        for f in feats.toarray():
+            print(f)
+
+    # pickle.dump(vectorizer, open("data/bow_mod1000", "wb"))
 
 def reformatdata(stops=False):
     data = util.extract_raw_data(filenames, cap=None)
 
+    p = math.ceil(len(data) * .8)
+    training = data[:p]
+    test = data[p:]
     lemmatizer = WordNetLemmatizer()
-    with open("data/data1.out", "w") as f:
-        for d in data:
+
+    with open("data/training.out", "w") as f:
+        for d in training:
             review = BeautifulSoup(d[0], "html5lib").get_text()
             review = util.remove_emoji_and_nums(review)
             words = word_tokenize(review)
@@ -49,44 +58,70 @@ def reformatdata(stops=False):
                 words = [lemmatizer.lemmatize(w) for w in words if w not in util.stops]
             sent = " ".join(words)
             label = 1 if d[1][0] == 1 else 0
-            f.write("{0} {1}\n".format(sent, label))
+            f.write("{0}::::{1}\n".format(sent, label))
 
-def neural_network_model(data, train_x):
-    hidden_1_layer = {
-        'weights': tf.Variable(tf.random_normal([len(train_x[0]), n_nodes_hl1])),
-        'biases': tf.Variable(tf.random_normal([n_nodes_hl1]))}
+    print("reformat test")
+    with open("data/test.out", "w") as f:
+        for d in test:
+            review = BeautifulSoup(d[0], "html5lib").get_text()
+            review = util.remove_emoji_and_nums(review)
+            words = word_tokenize(review)
+            if stops:
+                words = [lemmatizer.lemmatize(w) for w in words if w not in util.stops]
+            sent = " ".join(words)
+            label = 1 if d[1][0] == 1 else 0
+            f.write("{0}::::{1}\n".format(sent, label))
 
-    hidden_2_layer = {
-        'weights': tf.Variable(tf.random_normal([n_nodes_hl1, n_nodes_hl2])),
-        'biases': tf.Variable(tf.random_normal([n_nodes_hl2]))}
+def neural_network_model(data):
+    hidden_1_layer = {'f_fum': n_nodes_hl1,
+                      'weight': tf.Variable(tf.random_normal([1000, n_nodes_hl1])),
+                      'bias': tf.Variable(tf.random_normal([n_nodes_hl1]))}
 
-    hidden_3_layer = {
-        'weights': tf.Variable(tf.random_normal([n_nodes_hl2, n_nodes_hl3])),
-        'biases': tf.Variable(tf.random_normal([n_nodes_hl3]))}
+    hidden_2_layer = {'f_fum': n_nodes_hl2,
+                      'weight': tf.Variable(tf.random_normal([n_nodes_hl1, n_nodes_hl2])),
+                      'bias': tf.Variable(tf.random_normal([n_nodes_hl2]))}
 
-    output_layer = {'weights': tf.Variable(tf.random_normal([n_nodes_hl3, n_classes])),
-                    'biases': tf.Variable(tf.random_normal([n_classes])), }
+    output_layer = {'f_fum': None,
+                    'weight': tf.Variable(tf.random_normal([n_nodes_hl2, n_classes])),
+                    'bias': tf.Variable(tf.random_normal([n_classes])), }
 
-    l1 = tf.add(tf.matmul(data, hidden_1_layer['weights']), hidden_1_layer['biases'])
+    # hidden_1_layer = {
+    #     'weights': tf.Variable(tf.random_normal([1000, n_nodes_hl1])),
+    #     'biases': tf.Variable(tf.random_normal([n_nodes_hl1]))}
+    #
+    # hidden_2_layer = {
+    #     'weights': tf.Variable(tf.random_normal([n_nodes_hl1, n_nodes_hl2])),
+    #     'biases': tf.Variable(tf.random_normal([n_nodes_hl2]))}
+    #
+    # hidden_3_layer = {
+    #     'weights': tf.Variable(tf.random_normal([n_nodes_hl2, n_nodes_hl3])),
+    #     'biases': tf.Variable(tf.random_normal([n_nodes_hl3]))}
+
+    # output_layer = {'weights': tf.Variable(tf.random_normal([n_nodes_hl3, n_classes])),
+    #                 'biases': tf.Variable(tf.random_normal([n_classes])), }
+
+    l1 = tf.add(tf.matmul(data, hidden_1_layer['weight']), hidden_1_layer['bias'])
     l1 = tf.nn.relu(l1)
 
-    l2 = tf.add(tf.matmul(l1, hidden_2_layer['weights']), hidden_2_layer['biases'])
+    l2 = tf.add(tf.matmul(l1, hidden_2_layer['weight']), hidden_2_layer['bias'])
     l2 = tf.nn.relu(l2)
 
-    l3 = tf.add(tf.matmul(l2, hidden_3_layer['weights']), hidden_3_layer['biases'])
-    l3 = tf.nn.relu(l3)
+    # l3 = tf.add(tf.matmul(l2, hidden_3_layer['weight']), hidden_3_layer['bias'])
+    # l3 = tf.nn.relu(l3)
 
-    output = tf.matmul(l3, output_layer['weights']) + output_layer['biases']
+    output = tf.matmul(l2, output_layer['weight']) + output_layer['bias']
+
     return output
 
-def train_neural_network(x, y, train_x, train_y, test_x, test_y, saver):
+def train_neural_network(x, y, model):
     start2 = time.time()
-    prediction = neural_network_model(x, train_x)
+    prediction = neural_network_model(x)
+    saver = tf.train.Saver()
     cost = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction, labels=y))
     optimizer = tf.train.AdamOptimizer().minimize(cost)
 
-    hm_epochs = 14
+    hm_epochs = 6
     with tf.Session() as sess:
         sess.run(tf.initialize_all_variables())
         try:
@@ -97,32 +132,25 @@ def train_neural_network(x, y, train_x, train_y, test_x, test_y, saver):
 
         while epoch <= hm_epochs:
             if epoch != 1:
-                saver.restore(sess, "model.ckpt")
+                saver.restore(sess, "data/model.ckpt")
             epoch_loss = 1
             with open('data/bow_mod1000', 'rb') as f:
                 lexicon = pickle.load(f)
-            with open('data/processed/data.out', buffering=20000, encoding='latin-1') as f:
+            with open('data/training.out', buffering=20000, encoding='latin-1') as f:
                 batch_x = []
                 batch_y = []
                 batches_run = 0
                 for line in f:
-                    label = line.split()[0]
-                    tweet = line.split(':::')[1]
-                    current_words = word_tokenize(tweet.lower())
-                    current_words = [lemmatizer.lemmatize(i) for i in current_words]
+                    review = line.split("::::")
+                    label = [1, 0] if review[-1] == 1 else [0, 1]
+                    sentence = review[0]
+                    features = model.transform([sentence])
 
-                    features = np.zeros(len(lexicon))
-
-                    for word in current_words:
-                        if word.lower() in lexicon:
-                            index_value = lexicon.index(word.lower())
-                            # OR DO +=1, test both
-                            features[index_value] += 1
-
-                    line_x = list(features)
-                    line_y = eval(label)
+                    line_x = features.toarray().tolist()[0]
+                    # line_x = list(features)
+                    # line_y = eval(label)
                     batch_x.append(line_x)
-                    batch_y.append(line_y)
+                    batch_y.append(label)
                     if len(batch_x) >= batch_size:
                         _, c = sess.run([optimizer, cost],
                                         feed_dict={x: np.array(batch_x),
@@ -134,48 +162,47 @@ def train_neural_network(x, y, train_x, train_y, test_x, test_y, saver):
                         print('Batch run:', batches_run, '/', total_batches, '| Epoch:',
                               epoch, '| Batch Loss:', c, )
 
-            saver.save(sess, "model.ckpt")
+            saver.save(sess, "data/model.ckpt")
             print('Epoch', epoch, 'completed out of', hm_epochs, 'loss:', epoch_loss)
             with open(tf_log, 'a') as f:
                 f.write(str(epoch) + '\n')
             epoch += 1
+        correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
+        accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
-            # START OTHER CODE
-    #         epoch_loss = 0
-    #
-    #         i = 0
-    #         while i < len(train_x):
-    #             start = i
-    #             end = i + batch_size
-    #
-    #             batch_x = np.array(train_x[start:end])
-    #             batch_y = np.array(train_y[start:end])
-    #
-    #             _, c = sess.run([optimizer, cost], feed_dict={x: batch_x, y: batch_y})
-    #             epoch_loss += c
-    #             i += batch_size
-    #
-    #         print('Epoch', epoch + 1, 'completed out of', hm_epochs, 'loss:', epoch_loss)
-    #
-    #     correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
-    #     accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
-    #
-    #     print('Accuracy:', accuracy.eval({x: test_x, y: test_y}))
+        test_x, test_y = gettestset("data/test.out", model)
+
+        print('Accuracy:', accuracy.eval({x: test_x, y: test_y}))
+
     print("Training NN took %.8f seconds" % (time.time() - start2))
 
-# def train_network():
-#     train_x, train_y, test_x, test_y = (pos, neg, testpos, testneg)
-#
-#     x = tf.placeholder('float', [None, len(train_x[0])])
-#     y = tf.placeholder('float')
-#
-#     train_neural_network(x, train_x, train_y, test_x, test_y, y)
-#
-#     print("Total Elapsed Time = %.2f seconds" % (time.time() - begin))
+def gettestset(fn, model):
+    reviews = []
+    labels = []
+    with open(fn, "r") as f:
+        for line in f:
+            review = line.split("::::")
+            sent = review[0]
+            label = [1, 0] if review[1] == 1 else [0, 1]
+            features = model.transform([sent])
+            reviews.append(features.toarray().tolist()[0 ])
+            labels.append(label)
+
+    return np.array(reviews), np.array(labels)
+
+
+def train_network():
+    # x = tf.placeholder('float', [None, len(train_x[0])])
+    x = tf.placeholder('float')
+    y = tf.placeholder('float')
+
+    model = pickle.load(open("data/bow_mod1000", "rb"))
+    train_neural_network(x, y, model)
+
+    # print("Total Elapsed Time = %.2f seconds" % (time.time() - begin))
 
 if __name__ == '__main__':
     # vectorizeexample()
-    reformatdata(True)
-    # saver = tf.train.Saver()
+    # reformatdata(True)
 
-    # train_network()
+    train_network()
