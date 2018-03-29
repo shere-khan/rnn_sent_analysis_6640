@@ -27,11 +27,6 @@ tf_log = 'tf.log'
 def create_lexicon():
     data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
                                   '/data/processed/'], cap=None)
-    class LemmaTokenizer(object):
-        def __init__(self):
-            self.wnl = WordNetLemmatizer()
-        def __call__(self, doc):
-            return [self.wnl.lemmatize(t) for t in word_tokenize(doc)]
 
     vectorizer = CountVectorizer(analyzer="word", preprocessor=lemmatizer,
                                  stop_words=util.stops, max_features=2000)
@@ -174,13 +169,13 @@ def train_neural_network(x, y, model):
         correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
-        test_x, test_y = get_test_set("data/test.out", model)
+        test_x, test_y = get_test_set_data("data/test.out", model)
 
         print('Accuracy:', accuracy.eval({x: test_x, y: test_y}))
 
     print("Training NN took %.8f seconds" % (time.time() - start2))
 
-def get_test_set(fn, model):
+def get_test_set_data(fn, model):
     reviews = []
     labels = []
     with open(fn, "r") as f:
