@@ -53,14 +53,14 @@ def ranForestClassifier(training, labels, n_est=100):
     return rf
 
 def ranforest():
-    model = pickle.load(open("data/w2v", "rb"))
+    model = pickle.load(open("../w2v", "rb"))
 
     # Turn training reviews into vector averages
-    train_reviews = pickle.load(open("data/train.p", "rb"))
+    train_reviews = pickle.load(open("../train.p", "rb"))
     train_rev_avgs, train_labels = util.create_review_avgs_and_labels(train_reviews,
                                                                       model)
     # Turn test reviews into vector averages
-    test_reviews = pickle.load(open("data/test.p", "rb"))
+    test_reviews = pickle.load(open("../test.p", "rb"))
     test_rev_avgs, test_labels = util.create_review_avgs_and_labels(test_reviews,
                                                                     model)
     # Run RF classifier

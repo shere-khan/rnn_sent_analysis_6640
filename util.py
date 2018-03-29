@@ -13,7 +13,7 @@ def extract_raw_data(filepaths, cap=1):
         val = path.split("/")[-2]
         lab = [1, 0] if val == 'pos' else [0, 1]
         for i, file in enumerate(os.listdir(path)):
-            if i < cap:
+            if cap is None or i < cap:
                 with open(path + file, "r") as f:
                     for line in f:
                             l.append([line, lab])

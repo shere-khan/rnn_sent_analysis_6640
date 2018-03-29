@@ -20,6 +20,8 @@ n_nodes_hl3 = 750
 lemmatizer = WordNetLemmatizer()
 hm_lines = 100000000
 
+total_batches = int(1600000 / batch_size)
+
 tf_log = 'tf.log'
 
 def vectorizeexample():
@@ -46,7 +48,8 @@ def reformatdata(stops=False):
             if stops:
                 words = [lemmatizer.lemmatize(w) for w in words if w not in util.stops]
             sent = " ".join(words)
-            f.write("{0}\n".format(sent))
+            label = 1 if d[1][0] == 1 else 0
+            f.write("{0} {1}\n".format(sent, label))
 
 def neural_network_model(data, train_x):
     hidden_1_layer = {
@@ -76,7 +79,7 @@ def neural_network_model(data, train_x):
     output = tf.matmul(l3, output_layer['weights']) + output_layer['biases']
     return output
 
-def train_neural_network(x, train_x, train_y, test_x, test_y, y):
+def train_neural_network(x, y, train_x, train_y, test_x, test_y, saver):
     start2 = time.time()
     prediction = neural_network_model(x, train_x)
     cost = tf.reduce_mean(
@@ -92,41 +95,87 @@ def train_neural_network(x, train_x, train_y, test_x, test_y, y):
         except:
             epoch = 1
 
-        for epoch in range(hm_epochs):
-            epoch_loss = 0
+        while epoch <= hm_epochs:
+            if epoch != 1:
+                saver.restore(sess, "model.ckpt")
+            epoch_loss = 1
+            with open('data/bow_mod1000', 'rb') as f:
+                lexicon = pickle.load(f)
+            with open('data/processed/data.out', buffering=20000, encoding='latin-1') as f:
+                batch_x = []
+                batch_y = []
+                batches_run = 0
+                for line in f:
+                    label = line.split()[0]
+                    tweet = line.split(':::')[1]
+                    current_words = word_tokenize(tweet.lower())
+                    current_words = [lemmatizer.lemmatize(i) for i in current_words]
 
-            i = 0
-            while i < len(train_x):
-                start = i
-                end = i + batch_size
+                    features = np.zeros(len(lexicon))
 
-                batch_x = np.array(train_x[start:end])
-                batch_y = np.array(train_y[start:end])
+                    for word in current_words:
+                        if word.lower() in lexicon:
+                            index_value = lexicon.index(word.lower())
+                            # OR DO +=1, test both
+                            features[index_value] += 1
 
-                _, c = sess.run([optimizer, cost], feed_dict={x: batch_x, y: batch_y})
-                epoch_loss += c
-                i += batch_size
+                    line_x = list(features)
+                    line_y = eval(label)
+                    batch_x.append(line_x)
+                    batch_y.append(line_y)
+                    if len(batch_x) >= batch_size:
+                        _, c = sess.run([optimizer, cost],
+                                        feed_dict={x: np.array(batch_x),
+                                                   y: np.array(batch_y)})
+                        epoch_loss += c
+                        batch_x = []
+                        batch_y = []
+                        batches_run += 1
+                        print('Batch run:', batches_run, '/', total_batches, '| Epoch:',
+                              epoch, '| Batch Loss:', c, )
 
-            print('Epoch', epoch + 1, 'completed out of', hm_epochs, 'loss:', epoch_loss)
+            saver.save(sess, "model.ckpt")
+            print('Epoch', epoch, 'completed out of', hm_epochs, 'loss:', epoch_loss)
+            with open(tf_log, 'a') as f:
+                f.write(str(epoch) + '\n')
+            epoch += 1
 
-        correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
-
-        print('Accuracy:', accuracy.eval({x: test_x, y: test_y}))
+            # START OTHER CODE
+    #         epoch_loss = 0
+    #
+    #         i = 0
+    #         while i < len(train_x):
+    #             start = i
+    #             end = i + batch_size
+    #
+    #             batch_x = np.array(train_x[start:end])
+    #             batch_y = np.array(train_y[start:end])
+    #
+    #             _, c = sess.run([optimizer, cost], feed_dict={x: batch_x, y: batch_y})
+    #             epoch_loss += c
+    #             i += batch_size
+    #
+    #         print('Epoch', epoch + 1, 'completed out of', hm_epochs, 'loss:', epoch_loss)
+    #
+    #     correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
+    #     accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
+    #
+    #     print('Accuracy:', accuracy.eval({x: test_x, y: test_y}))
     print("Training NN took %.8f seconds" % (time.time() - start2))
 
-def train_network():
-    train_x, train_y, test_x, test_y = (pos, neg, testpos, testneg)
-
-    x = tf.placeholder('float', [None, len(train_x[0])])
-    y = tf.placeholder('float')
-
-    train_neural_network(x, train_x, train_y, test_x, test_y, y)
-
-    print("Total Elapsed Time = %.2f seconds" % (time.time() - begin))
+# def train_network():
+#     train_x, train_y, test_x, test_y = (pos, neg, testpos, testneg)
+#
+#     x = tf.placeholder('float', [None, len(train_x[0])])
+#     y = tf.placeholder('float')
+#
+#     train_neural_network(x, train_x, train_y, test_x, test_y, y)
+#
+#     print("Total Elapsed Time = %.2f seconds" % (time.time() - begin))
 
 if __name__ == '__main__':
     # vectorizeexample()
-    # reformatdata(True)
+    reformatdata(True)
+    # saver = tf.train.Saver()
 
-    train_network()
+    # train_network()
