@@ -24,22 +24,25 @@ total_batches = int(50000 / batch_size)
 
 tf_log = 'tf.log'
 
-def vectorizeexample():
+def create_lexicon():
     data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
-                                  '/data/processed/'], cap=10)
+                                  '/data/processed/'], cap=None)
+    class LemmaTokenizer(object):
+        def __init__(self):
+            self.wnl = WordNetLemmatizer()
+        def __call__(self, doc):
+            return [self.wnl.lemmatize(t) for t in word_tokenize(doc)]
 
-    vectorizer = CountVectorizer(analyzer="word", preprocessor=None, max_features=1000)
+    vectorizer = CountVectorizer(analyzer="word", preprocessor=lemmatizer,
+                                 stop_words=util.stops, max_features=2000)
 
     train = [x[0] for x in data]
 
     vectorizer.fit_transform(train)
-    # print(vectorizer.vocabulary_)
     for d in data:
         feats = vectorizer.transform([d[0]])
         for f in feats.toarray():
             print(f)
-
-    # pickle.dump(vectorizer, open("data/bow_mod1000", "wb"))
 
 def reformatdata(stops=False):
     data = util.extract_raw_data(filenames, cap=None)
@@ -171,13 +174,13 @@ def train_neural_network(x, y, model):
         correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
-        test_x, test_y = gettestset("data/test.out", model)
+        test_x, test_y = get_test_set("data/test.out", model)
 
         print('Accuracy:', accuracy.eval({x: test_x, y: test_y}))
 
     print("Training NN took %.8f seconds" % (time.time() - start2))
 
-def gettestset(fn, model):
+def get_test_set(fn, model):
     reviews = []
     labels = []
     with open(fn, "r") as f:
@@ -203,7 +206,7 @@ def train_network():
     # print("Total Elapsed Time = %.2f seconds" % (time.time() - begin))
 
 if __name__ == '__main__':
-    # vectorizeexample()
+    create_lexicon()
     # reformatdata(True)
 
-    train_network()
+    # train_network()
