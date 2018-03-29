@@ -7,6 +7,21 @@ from keras.preprocessing import sequence
 
 stops = set(stopwords.words('english'))
 
+def extract_raw_data(filepaths, cap=1):
+    l = []
+    for path in filepaths:
+        val = path.split("/")[-2]
+        lab = [1, 0] if val == 'pos' else [0, 1]
+        for i, file in enumerate(os.listdir(path)):
+            if i < cap:
+                with open(path + file, "r") as f:
+                    for line in f:
+                            l.append([line, lab])
+            else:
+                break
+
+    return l
+
 def extract_clean_reviews(data):
     cleanreviews = []
     labels = []
@@ -153,8 +168,8 @@ def prepreprocessdata(cap=1000):
     sw = True
 
     if input("Process data (y/n)?") == 'y':
-        trainfn = input("Enter filename for training pickle: ")
-        testfn = input("Enter filename for test pickle: ")
+        # trainfn = input("Enter filename for training pickle: ")
+        # testfn = input("Enter filename for test pickle: ")
         # Process training data
         print("Processing training data...")
         trainneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/dataset/train/neg'
@@ -166,7 +181,7 @@ def prepreprocessdata(cap=1000):
         labled_train_reviews = combinedata(train_neg_sents, train_pos_sents)
 
         print("Creating pickle for processed data")
-        pickle.dump(labled_train_reviews, open(trainfn, "wb"))
+        # pickle.dump(labled_train_reviews, open(trainfn, "wb"))
 
         # Process test data
         print("Processing test data...")
@@ -178,4 +193,6 @@ def prepreprocessdata(cap=1000):
         labled_test_reviews = combinedata(test_neg_sents, test_pos_sents)
 
         print("Creating pickle for processed data")
-        pickle.dump(labled_test_reviews, open(testfn, "wb"))
+        # pickle.dump(labled_test_reviews, open(testfn, "wb"))
+
+        return labled_train_reviews, labled_test_reviews
