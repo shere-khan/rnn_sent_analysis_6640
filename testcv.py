@@ -1,4 +1,4 @@
-import util, pickle, numpy as np, time, math
+import util, pickle, numpy as np, time, math, random
 from sklearn.feature_extraction.text import CountVectorizer
 import tensorflow as tf
 from nltk import word_tokenize
@@ -13,7 +13,7 @@ filenames = ['/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/train/
              '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/pos/']
 
 n_classes = 2
-batch_size = 24000
+batch_size = 5000
 n_nodes_hl1 = 1000
 n_nodes_hl2 = 1000
 n_nodes_hl3 = 1000
@@ -43,8 +43,9 @@ def vectorizeexample():
 
 def reformatdata(stops=False):
     data = util.extract_raw_data(filenames, cap=None)
+    random.shuffle(data)
 
-    p = math.ceil(len(data) * .8)
+    p = math.ceil(len(data) * .95)
     training = data[:p]
     test = data[p:]
     lemmatizer = WordNetLemmatizer()
@@ -121,7 +122,7 @@ def train_neural_network(x, y, model):
         tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction, labels=y))
     optimizer = tf.train.AdamOptimizer().minimize(cost)
 
-    hm_epochs = 6
+    hm_epochs = 15
     with tf.Session() as sess:
         sess.run(tf.initialize_all_variables())
         try:
@@ -142,7 +143,7 @@ def train_neural_network(x, y, model):
                 batches_run = 0
                 for line in f:
                     review = line.split("::::")
-                    label = [1, 0] if review[-1] == 1 else [0, 1]
+                    label = [1, 0] if review[1][:-1] == '1' else [0, 1]
                     sentence = review[0]
                     features = model.transform([sentence])
 
@@ -183,7 +184,7 @@ def gettestset(fn, model):
         for line in f:
             review = line.split("::::")
             sent = review[0]
-            label = [1, 0] if review[1] == 1 else [0, 1]
+            label = [1, 0] if review[1][:-1] == '1' else [0, 1]
             features = model.transform([sent])
             reviews.append(features.toarray().tolist()[0 ])
             labels.append(label)
