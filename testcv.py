@@ -3,7 +3,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 import tensorflow as tf
 from nltk import word_tokenize
 from bs4 import BeautifulSoup
-from nltk.stem import WordNetLemmatizer
+from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
 
@@ -27,17 +27,11 @@ tf_log = 'tf.log'
 def create_lexicon():
     data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
                                   '/data/processed/'], cap=None)
-
-    vectorizer = CountVectorizer(analyzer="word", preprocessor=lemmatizer,
-                                 stop_words=util.stops, max_features=2000)
-
     train = [x[0] for x in data]
+    vectorizer = CountVectorizer(analyzer="word", max_features=2000)
+    vectorizer.fit(train)
+    pickle.dump(vectorizer, open("data/w2v", "wb"))
 
-    vectorizer.fit_transform(train)
-    for d in data:
-        feats = vectorizer.transform([d[0]])
-        for f in feats.toarray():
-            print(f)
 
 def reformatdata(stops=False):
     data = util.extract_raw_data(filenames, cap=None)
@@ -48,7 +42,7 @@ def reformatdata(stops=False):
     test = data[p:]
     lemmatizer = WordNetLemmatizer()
 
-    with open("data/training.out", "w") as f:
+    with open("data/processed/training.out", "w") as f:
         for d in training:
             review = BeautifulSoup(d[0], "html5lib").get_text()
             review = util.remove_emoji_and_nums(review)
@@ -60,7 +54,7 @@ def reformatdata(stops=False):
             f.write("{0}::::{1}\n".format(sent, label))
 
     print("reformat test")
-    with open("data/test.out", "w") as f:
+    with open("data/processed/test.out", "w") as f:
         for d in test:
             review = BeautifulSoup(d[0], "html5lib").get_text()
             review = util.remove_emoji_and_nums(review)
@@ -135,7 +129,8 @@ def train_neural_network(x, y, model):
             epoch_loss = 1
             with open('data/bow_mod1000', 'rb') as f:
                 lexicon = pickle.load(f)
-            with open('data/training.out', buffering=20000, encoding='latin-1') as f:
+            with open('data/processed/training.out', buffering=20000,
+                      encoding='latin-1') as f:
                 batch_x = []
                 batch_y = []
                 batches_run = 0
@@ -169,7 +164,7 @@ def train_neural_network(x, y, model):
         correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
-        test_x, test_y = get_test_set_data("data/test.out", model)
+        test_x, test_y = get_test_set_data("data/processed/test.out", model)
 
         print('Accuracy:', accuracy.eval({x: test_x, y: test_y}))
 
