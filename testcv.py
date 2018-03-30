@@ -17,8 +17,8 @@ batch_size = 5000
 n_nodes_hl1 = 1000
 n_nodes_hl2 = 1000
 n_nodes_hl3 = 1000
-lemmatizer = WordNetLemmatizer()
 hm_lines = 100000000
+num_weights = 2000
 
 total_batches = int(50000 / batch_size)
 
@@ -28,7 +28,7 @@ def create_lexicon():
     data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
                                   '/data/processed/'], cap=None)
     train = [x[0] for x in data]
-    vectorizer = CountVectorizer(analyzer="word", max_features=2000)
+    vectorizer = CountVectorizer(analyzer="word", max_features=num_weights)
     vectorizer.fit(train)
     pickle.dump(vectorizer, open("data/w2v", "wb"))
 
@@ -67,7 +67,7 @@ def reformatdata(stops=False):
 
 def neural_network_model(data):
     hidden_1_layer = {'f_fum': n_nodes_hl1,
-                      'weight': tf.Variable(tf.random_normal([1000, n_nodes_hl1])),
+                      'weight': tf.Variable(tf.random_normal([num_weights, n_nodes_hl1])),
                       'bias': tf.Variable(tf.random_normal([n_nodes_hl1]))}
 
     hidden_2_layer = {'f_fum': n_nodes_hl2,
@@ -78,29 +78,11 @@ def neural_network_model(data):
                     'weight': tf.Variable(tf.random_normal([n_nodes_hl2, n_classes])),
                     'bias': tf.Variable(tf.random_normal([n_classes])), }
 
-    # hidden_1_layer = {
-    #     'weights': tf.Variable(tf.random_normal([1000, n_nodes_hl1])),
-    #     'biases': tf.Variable(tf.random_normal([n_nodes_hl1]))}
-    #
-    # hidden_2_layer = {
-    #     'weights': tf.Variable(tf.random_normal([n_nodes_hl1, n_nodes_hl2])),
-    #     'biases': tf.Variable(tf.random_normal([n_nodes_hl2]))}
-    #
-    # hidden_3_layer = {
-    #     'weights': tf.Variable(tf.random_normal([n_nodes_hl2, n_nodes_hl3])),
-    #     'biases': tf.Variable(tf.random_normal([n_nodes_hl3]))}
-
-    # output_layer = {'weights': tf.Variable(tf.random_normal([n_nodes_hl3, n_classes])),
-    #                 'biases': tf.Variable(tf.random_normal([n_classes])), }
-
     l1 = tf.add(tf.matmul(data, hidden_1_layer['weight']), hidden_1_layer['bias'])
     l1 = tf.nn.relu(l1)
 
     l2 = tf.add(tf.matmul(l1, hidden_2_layer['weight']), hidden_2_layer['bias'])
     l2 = tf.nn.relu(l2)
-
-    # l3 = tf.add(tf.matmul(l2, hidden_3_layer['weight']), hidden_3_layer['bias'])
-    # l3 = tf.nn.relu(l3)
 
     output = tf.matmul(l2, output_layer['weight']) + output_layer['bias']
 
@@ -127,8 +109,6 @@ def train_neural_network(x, y, model):
             if epoch != 1:
                 saver.restore(sess, "data/model.ckpt")
             epoch_loss = 1
-            with open('data/bow_mod1000', 'rb') as f:
-                lexicon = pickle.load(f)
             with open('data/processed/training.out', buffering=20000,
                       encoding='latin-1') as f:
                 batch_x = []
@@ -141,8 +121,6 @@ def train_neural_network(x, y, model):
                     features = model.transform([sentence])
 
                     line_x = features.toarray().tolist()[0]
-                    # line_x = list(features)
-                    # line_y = eval(label)
                     batch_x.append(line_x)
                     batch_y.append(label)
                     if len(batch_x) >= batch_size:
@@ -186,17 +164,15 @@ def get_test_set_data(fn, model):
 
 
 def train_network():
-    # x = tf.placeholder('float', [None, len(train_x[0])])
     x = tf.placeholder('float')
     y = tf.placeholder('float')
 
-    model = pickle.load(open("data/bow_mod1000", "rb"))
+    model = pickle.load(open("data/w2v", "rb"))
     train_neural_network(x, y, model)
 
     # print("Total Elapsed Time = %.2f seconds" % (time.time() - begin))
 
 if __name__ == '__main__':
-    create_lexicon()
+    # create_lexicon()
     # reformatdata(True)
-
-    # train_network()
+    train_network()
