@@ -1,8 +1,9 @@
 import util, pickle, numpy as np, time, math, random, logging
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 import tensorflow as tf
-from gensim.models import Word2Vec, KeyedVectors
-from nltk import word_tokenize
+from gensim.models import Word2Vec
+from sklearn.metrics import accuracy_score
 from bs4 import BeautifulSoup
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
@@ -19,7 +20,7 @@ n_nodes_hl1 = 1000
 n_nodes_hl2 = 1000
 n_nodes_hl3 = 1000
 hm_lines = 100000000
-num_feats = 3000
+num_feats = 2000
 
 total_batches = int(50000 / batch_size)
 
@@ -98,7 +99,7 @@ def train_neural_network(x, y, model):
         tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction, labels=y))
     optimizer = tf.train.AdamOptimizer().minimize(cost)
 
-    hm_epochs = 20
+    hm_epochs = 25
     with tf.Session() as sess:
         sess.run(tf.initialize_all_variables())
         try:
@@ -225,7 +226,7 @@ def train_neural_network_w2v(x, y, model):
         tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction, labels=y))
     optimizer = tf.train.AdamOptimizer().minimize(cost)
 
-    hm_epochs = 15
+    hm_epochs = 20
     with tf.Session() as sess:
         sess.run(tf.initialize_all_variables())
         try:
@@ -289,6 +290,36 @@ def get_test_set_data_w2v(fn, model):
     features = create_review_avgs_and_labels(reviews, model)
     return features, np.array(labels)
 
+def ranForestClassifier(training, labels, n_est=100):
+    rf = RandomForestClassifier(n_est)
+    rf.fit(training, labels)
+
+    if input("Would you like to save classifier (y/n)?") == 'y':
+        with open(input('filename? '), 'wb') as f:
+            pickle.dump(rf, f)
+
+    return rf
+
+def ranforest():
+    model = pickle.load(open("../w2v", "rb"))
+
+    # Turn training reviews into vector averages
+    train_reviews = pickle.load(open("data/processed/train.p", "rb"))
+    train_rev_avgs, train_labels = util.create_review_avgs_and_labels(train_reviews, model)
+
+    # Turn test reviews into vector averages
+    test_reviews = pickle.load(open("data/processed/test.p", "rb"))
+    test_rev_avgs, test_labels = util.create_review_avgs_and_labels(test_reviews, model)
+
+    # Run RF classifier
+    rf = ranForestClassifier(train_rev_avgs, train_labels)
+
+    # Test RF Classifer and get accuracy
+    predictions = rf.predict(test_rev_avgs)
+    testacc = accuracy_score(test_labels, predictions)
+
+    print("Test acc: {0}".format(testacc))
+
 
 if __name__ == '__main__':
     # BOW
@@ -296,10 +327,13 @@ if __name__ == '__main__':
     # create_lexicon()
     # train_network()
 
-    # W2V
-    # reformatdata(cap=None, stops=False)
-    # data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
-    #                               '/data/processed/'], cap=None)
-    # sents = [x[0].split("::::")[0].split() for x in data]
-    # model = train_w2v_model(sents)
-    train_network_w2v()
+    # Prep data for W2VNN or RF
+    reformatdata(cap=None, stops=False)
+    data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
+                                  '/data/processed/'], cap=None)
+    sents = [x[0].split("::::")[0].split() for x in data]
+    model = train_w2v_model(sents)
+
+    # train_network_w2v()
+    ranforest()
+
