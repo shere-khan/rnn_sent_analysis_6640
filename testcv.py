@@ -1,6 +1,5 @@
 import util, pickle, numpy as np, time, math, random, logging, os
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import CountVectorizer
 import tensorflow as tf
 from gensim.models import Word2Vec
 from sklearn.metrics import accuracy_score
@@ -25,14 +24,6 @@ num_feats = 2000
 total_batches = int(50000 / batch_size)
 
 logfile = 'tf.log'
-
-def create_lexicon():
-    data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
-                                  '/data/processed/'], cap=None)
-    train = [x[0] for x in data]
-    vectorizer = CountVectorizer(analyzer="word", max_features=num_feats)
-    vectorizer.fit(train)
-    pickle.dump(vectorizer, open("data/w2v", "wb"))
 
 def reformatdata(cap=None, stops=False):
     data = util.extract_raw_data(filenames, cap=cap)
@@ -91,72 +82,12 @@ def neural_network_model(data):
 
     return output
 
-def train_neural_network(x, y, model):
-    start2 = time.time()
-    prediction = neural_network_model(x)
-    saver = tf.train.Saver()
-    cost = tf.reduce_mean(
-        tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction, labels=y))
-    optimizer = tf.train.AdamOptimizer().minimize(cost)
-
-    hm_epochs = 25
-    with tf.Session() as sess:
-        sess.run(tf.initialize_all_variables())
-        try:
-            epoch = int(open(logfile, 'r').read().split('\n')[-2]) + 1
-            print('STARTING:', epoch)
-        except:
-            epoch = 1
-
-        while epoch <= hm_epochs:
-            if epoch != 1:
-                saver.restore(sess, "data/model.ckpt")
-            epoch_loss = 1
-            with open('data/processed/training.out', buffering=20000,
-                      encoding='latin-1') as f:
-                batch_x = []
-                batch_y = []
-                batches_run = 0
-                for line in f:
-                    review = line.split("::::")
-                    label = [1, 0] if review[1][:-1] == '1' else [0, 1]
-                    sentence = review[0]
-                    features = model.transform([sentence])
-
-                    line_x = features.toarray().tolist()[0]
-                    batch_x.append(line_x)
-                    batch_y.append(label)
-                    if len(batch_x) >= batch_size:
-                        _, c = sess.run([optimizer, cost],
-                                        feed_dict={x: np.array(batch_x),
-                                                   y: np.array(batch_y)})
-                        epoch_loss += c
-                        batch_x = []
-                        batch_y = []
-                        batches_run += 1
-                        print('Batch run:', batches_run, '/', total_batches, '| Epoch:',
-                              epoch, '| Batch Loss:', c, )
-
-            saver.save(sess, "data/model.ckpt")
-            print('Epoch', epoch, 'completed out of', hm_epochs, 'loss:', epoch_loss)
-            with open(logfile, 'a') as f:
-                f.write(str(epoch) + '\n')
-            epoch += 1
-        correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
-
-        test_x, test_y = get_test_set_data("data/processed/test.out", model)
-
-        print('Accuracy:', accuracy.eval({x: test_x, y: test_y}))
-
-    print("Training NN took %.8f seconds" % (time.time() - start2))
-
 def get_test_set_data(fn, model):
     reviews = []
     labels = []
     with open(fn, "r") as f:
         for line in f:
-            review = line.split("::::")
+            review = line.split("+:::")
             sent = review[0]
             label = [1, 0] if review[1][:-1] == '1' else [0, 1]
             features = model.transform([sent])
@@ -171,15 +102,6 @@ def train_network_w2v():
 
     model = Word2Vec.load("data/w2v_nn")
     train_neural_network_w2v(x, y, model)
-
-    # print("Total Elapsed Time = %.2f seconds" % (time.time() - begin))
-
-def train_network():
-    x = tf.placeholder('float')
-    y = tf.placeholder('float')
-
-    model = pickle.load(open("data/w2v", "rb"))
-    train_neural_network(x, y, model)
 
     # print("Total Elapsed Time = %.2f seconds" % (time.time() - begin))
 
@@ -280,7 +202,7 @@ def get_test_set_data_w2v(fn, model):
     labels = []
     with open(fn, "r") as f:
         for line in f:
-            review = line.split("::::")
+            review = line.split("+:::")
             sent = review[0]
             label = [1, 0] if review[1][:-1] == '1' else [0, 1]
             reviews.append(sent)
@@ -327,7 +249,6 @@ def getlabels(data):
     for d in data:
         val = d[0].split("+:::")[1][0]
         # print()
-        # val = d[0].split("::::")[1][0]
         labels.append(int(val))
 
 
@@ -361,25 +282,11 @@ def getsents(data):
     return sents
 
 if __name__ == '__main__':
-    # BOW
-    # reformatdata(stops=True)
-    # create_lexicon()
-    # train_network()
-
     # Prep data for W2VNN
-    # reformatdata(cap=None, stops=False)
-    # data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
-    #                               '/data/processed/'], cap=None)
-    # sents = [x[0].split("::::")[0].split() for x in data]
-    # model = train_w2v_model(sents)
-    # train_network_w2v()
-
-    # RF
-    # reformatdata(cap=100, stops=False)
-    print("Extract sents")
-    data = extractdata(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
+    reformatdata(cap=1000, stops=False)
+    data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
                                   '/data/processed/'], cap=None)
-    sents = getsents(data)
-    labels = getlabels(data)
-    # model = train_w2v_model(sents)
-    ranforest(sents, labels)
+    sents = [x[0].split("+:::")[0].split() for x in data]
+    train_w2v_model(sents)
+    train_network_w2v()
+    pass
