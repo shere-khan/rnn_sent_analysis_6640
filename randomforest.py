@@ -1,13 +1,13 @@
-import pickle, os, numpy as np, time
-import logging, pylab as plt
-import plotly as py
+import pickle, time
+import logging
 from gensim.models import Word2Vec
 import util
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
+
 def train_w2v_model(sentences):
-    num_features = 1000 # Word vector dimensionality
+    num_features = 1000  # Word vector dimensionality
     min_word_count = 40  # Minimum word count
     num_workers = 8  # Number of threads to run in parallel
     context = 10  # Context window size
@@ -22,23 +22,6 @@ def train_w2v_model(sentences):
 
     # Save the model
     model.save("data/rf/w2vrf")
-
-    return model
-
-def openw2v(sentences):
-    doesfileexist = True
-    model = None
-    fn = input("Enter w2v model name: ")
-    while not os.path.isfile(fn):
-        fn = input("File does not exist, would you like to reprocess data (y/n)?")
-        if fn == 'y':
-            doesfileexist = False
-            model = train_w2v_model(sentences)
-        else:
-            fn = input("Enter filename?")
-
-    if doesfileexist:
-        model = Word2Vec.load("word2vecmodel")
 
     return model
 
@@ -70,47 +53,6 @@ def ranforest():
 
     print("Test acc: {0}".format(testacc))
 
-def recursive_nn():
-    # model = pickle.load(open(input("Enter model name: "), "rb"))
-    model = pickle.load(open("data/w2v", "rb"))
-
-    # Turn training reviews into word vectors
-    train_reviews = pickle.load(open("data/train.p", "rb"))
-    training_word_vecs, trainlabels = util.transform_reviews_to_word_vectors(
-        train_reviews, model)
-
-    # Turn test reviews into word vectors
-    test_reviews = pickle.load(open("data/test.p", "rb"))
-    test_word_vecs, testlabels = util.transform_reviews_to_word_vectors(
-        test_reviews, model)
-
-    # Truncate sequences
-    seq_length = 550
-    training_word_vecs = [s[:seq_length] for s in test_word_vecs]
-    test_word_vecs = [s[:seq_length] for s in test_word_vecs]
-
-    # Pad sequences
-    util.pad_sequences(training_word_vecs, seq_length, model.vector_size)
-    util.pad_sequences(test_word_vecs, seq_length, model.vector_size)
-    exit(0)
-
-    # rnn.train(trainsents, testsents, timesteps=seq_length)
-
-def plothist():
-    dist = [len(s) for s in []]
-    # dist = [len(s) for s in testsents]
-    l = np.random.randn(10)
-    print('dkf')
-
-    plt.hist(np.array(dist))
-    plt.xlabel("Lengths")
-    plt.ylabel("Freq")
-
-    py.tools.set_credentials_file(username='jbarry', api_key='NxzNmvLGLfOXz9xjF2HI')
-
-    fig = plt.gcf()
-    ploturl = py.plotly.plot_mpl(fig, filename='nlp.6640.rnn.seqeunce_length.dist')
-
 def trainw2voption():
     train_reviews = pickle.load(
         open("data/rf/train.out", "rb"))
@@ -123,8 +65,7 @@ def trainw2voption():
 if __name__ == '__main__':
     isfilesaved = False
     print("What would you like to do?")
-    print("1: Process data\n2: Train w2vec model\n3: Train RNN"
-          "\n4: Random Forest\n5: Plot hist of sequence lengths\n")
+    print("1: Process data\n2: Train w2vec model\n3: Random Forest Classifier\n\n")
     option = input("input: ")
     if option == '1':
         captrain = int(input("Cap train: "))
@@ -132,12 +73,5 @@ if __name__ == '__main__':
         util.prepreprocessdata(captrain, captest)
     elif option == '2':
         trainw2voption()
-    elif option == '3':
-        recursive_nn()
-    elif option == '4':  # Use RF classifier
+    elif option == '3':  # Use RF classifier
         ranforest()
-    elif option == '5':  # plot histogram of sequence lengths
-        plothist()
-    elif option == '6':
-        train = pickle.load(open("data/train.p", "rb"))
-        test = pickle.load(open("data/test.p", "rb"))
