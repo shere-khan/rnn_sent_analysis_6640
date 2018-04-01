@@ -13,15 +13,13 @@ filenames = ['/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/train/
              '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/neg/',
              '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/pos/']
 
-n_classes = 2
+num_classes = 2
 batch_size = 5000
-n_nodes_hl1 = 1000
-n_nodes_hl2 = 1000
-n_nodes_hl3 = 1000
-hm_lines = 100000000
+num_nodes_hl1 = 1000
+num_nodes_hl2 = 1000
 num_feats = 2000
 
-total_batches = int(50000 / batch_size)
+total_num_batches = int(50000 / batch_size)
 
 logfile = 'tf.log'
 
@@ -60,17 +58,17 @@ def reformatdata(cap=None, stops=False):
             f.write("{0}+:::{1}\n".format(sent, label))
 
 def neural_network_model(data):
-    hidden_1_layer = {'f_fum': n_nodes_hl1,
-                      'weight': tf.Variable(tf.random_normal([num_feats, n_nodes_hl1])),
-                      'bias': tf.Variable(tf.random_normal([n_nodes_hl1]))}
+    hidden_1_layer = {'f_fum': num_nodes_hl1,
+                      'weight': tf.Variable(tf.random_normal([num_feats, num_nodes_hl1])),
+                      'bias': tf.Variable(tf.random_normal([num_nodes_hl1]))}
 
-    hidden_2_layer = {'f_fum': n_nodes_hl2,
-                      'weight': tf.Variable(tf.random_normal([n_nodes_hl1, n_nodes_hl2])),
-                      'bias': tf.Variable(tf.random_normal([n_nodes_hl2]))}
+    hidden_2_layer = {'f_fum': num_nodes_hl2,
+                      'weight': tf.Variable(tf.random_normal([num_nodes_hl1, num_nodes_hl2])),
+                      'bias': tf.Variable(tf.random_normal([num_nodes_hl2]))}
 
     output_layer = {'f_fum': None,
-                    'weight': tf.Variable(tf.random_normal([n_nodes_hl2, n_classes])),
-                    'bias': tf.Variable(tf.random_normal([n_classes])), }
+                    'weight': tf.Variable(tf.random_normal([num_nodes_hl2, num_classes])),
+                    'bias': tf.Variable(tf.random_normal([num_classes])), }
 
     l1 = tf.add(tf.matmul(data, hidden_1_layer['weight']), hidden_1_layer['bias'])
     l1 = tf.nn.relu(l1)
@@ -180,7 +178,7 @@ def train_neural_network_w2v(x, y, model):
                         set_y = []
                         batches_run += 1
                         print("Batch run:{0}/{1} | Epoch: {2} | Batch Loss: {3}"
-                              .format(batches_run, total_batches, epc, c) )
+                              .format(batches_run, total_num_batches, epc, c))
 
             sav.save(sess, "data/model.ckpt")
             print('Completed epoch {0} out of {1} loss = {2}'.format(epc, num_epochs,
