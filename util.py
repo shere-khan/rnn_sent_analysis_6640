@@ -161,38 +161,36 @@ def split_sents_and_labels(reviews):
 
     return sents, labels
 
-def prepreprocessdata(cap=1000):
+def prepreprocessdata(captrain=1000, captest=1000):
     # todo stpl size of trianing set test set
     # todo note # of pos reviews for train and test is equal
     tokr = load('tokenizers/punkt/english.pickle')
     sw = True
 
     if input("Process data (y/n)?") == 'y':
-        # trainfn = input("Enter filename for training pickle: ")
-        # testfn = input("Enter filename for test pickle: ")
         # Process training data
         print("Processing training data...")
-        trainneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/dataset/train/neg'
-        train_neg_sents = extractdata(trainneg, cap, tokr, 0, sw)
+        trainneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/train/neg'
+        train_neg_sents = extractdata(trainneg, captrain, tokr, 0, sw)
 
-        trainpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/dataset/train/pos'
-        train_pos_sents = extractdata(trainpos, cap, tokr, 1, sw)
+        trainpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/train/pos'
+        train_pos_sents = extractdata(trainpos, captrain, tokr, 1, sw)
 
         labled_train_reviews = combinedata(train_neg_sents, train_pos_sents)
 
         print("Creating pickle for processed data")
-        # pickle.dump(labled_train_reviews, open(trainfn, "wb"))
+        pickle.dump(labled_train_reviews, open("data/rf/train.out", "wb"))
 
         # Process test data
         print("Processing test data...")
-        testneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/dataset/test/neg'
-        test_neg_sents = extractdata(testneg, cap, tokr, 0, sw)
-        testpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/dataset/test/pos'
-        test_pos_sents = extractdata(testpos, cap, tokr, 1, sw)
+        testneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/neg'
+        test_neg_sents = extractdata(testneg, captest, tokr, 0, sw)
+        testpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/pos'
+        test_pos_sents = extractdata(testpos, captest, tokr, 1, sw)
 
         labled_test_reviews = combinedata(test_neg_sents, test_pos_sents)
 
         print("Creating pickle for processed data")
-        # pickle.dump(labled_test_reviews, open(testfn, "wb"))
+        pickle.dump(labled_test_reviews, open("data/rf/test.out", "wb"))
 
         return labled_train_reviews, labled_test_reviews

@@ -1,4 +1,4 @@
-import pickle, os, numpy as np
+import pickle, os, numpy as np, time
 import logging, pylab as plt
 import plotly as py
 from gensim.models import Word2Vec
@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
 def train_w2v_model(sentences):
-    num_features = 300  # Word vector dimensionality
+    num_features = 1000 # Word vector dimensionality
     min_word_count = 40  # Minimum word count
     num_workers = 8  # Number of threads to run in parallel
     context = 10  # Context window size
@@ -21,7 +21,7 @@ def train_w2v_model(sentences):
                      seed=1)
 
     # Save the model
-    model.save(input("Enter model name: "))
+    model.save("data/rf/w2vrf")
 
     return model
 
@@ -46,25 +46,23 @@ def ranForestClassifier(training, labels, n_est=100):
     rf = RandomForestClassifier(n_est)
     rf.fit(training, labels)
 
-    if input("Would you like to save classifier (y/n)?") == 'y':
-        with open(input('filename? '), 'wb') as f:
-            pickle.dump(rf, f)
-
     return rf
 
 def ranforest():
-    model = pickle.load(open("../w2v", "rb"))
+    start = time.time()
+    model = Word2Vec.load("data/rf/w2vrf")
 
     # Turn training reviews into vector averages
-    train_reviews = pickle.load(open("../train.p", "rb"))
+    train_reviews = pickle.load(open("data/rf/train.out", "rb"))
     train_rev_avgs, train_labels = util.create_review_avgs_and_labels(train_reviews,
                                                                       model)
     # Turn test reviews into vector averages
-    test_reviews = pickle.load(open("../test.p", "rb"))
+    test_reviews = pickle.load(open("data/rf/test.out", "rb"))
     test_rev_avgs, test_labels = util.create_review_avgs_and_labels(test_reviews,
                                                                     model)
     # Run RF classifier
     rf = ranForestClassifier(train_rev_avgs, train_labels)
+    print("Time: {0}".format(time.time() - start))
 
     # Test RF Classifer and get accuracy
     predictions = rf.predict(test_rev_avgs)
@@ -115,9 +113,9 @@ def plothist():
 
 def trainw2voption():
     train_reviews = pickle.load(
-        open(input("Enter name of training data pickle: "), "rb"))
+        open("data/rf/train.out", "rb"))
     test_reviews = pickle.load(
-        open(input("Enter name of test data pickle: "), "rb"))
+        open("data/rf/test.out", "rb"))
     sents = [r[0] for r in train_reviews]
     sents.extend([r[0] for r in test_reviews])
     train_w2v_model(sents)
@@ -129,7 +127,9 @@ if __name__ == '__main__':
           "\n4: Random Forest\n5: Plot hist of sequence lengths\n")
     option = input("input: ")
     if option == '1':
-        util.prepreprocessdata(int(input("Cap: ")))
+        captrain = int(input("Cap train: "))
+        captest = int(input("Cap test: "))
+        util.prepreprocessdata(captrain, captest)
     elif option == '2':
         trainw2voption()
     elif option == '3':
@@ -141,17 +141,3 @@ if __name__ == '__main__':
     elif option == '6':
         train = pickle.load(open("data/train.p", "rb"))
         test = pickle.load(open("data/test.p", "rb"))
-
-
-    # stpl: something to play with
-    # todo stpl max_features
-    # vectorizer = CountVectorizer(analyzer='word',
-    #                              tokenizer=None,
-    #                              preprocessor=None,
-    #                              stop_words=None)
-
-    # model.init_sims(replace=True)
-
-    # model = openw2v()
-    # print(model.doesnt_match("man woman child kitchen".split()))
-    # print(model.most_similar(positive=['woman', 'king'], negative=['man'], topn=10))

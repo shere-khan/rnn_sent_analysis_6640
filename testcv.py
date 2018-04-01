@@ -1,4 +1,4 @@
-import util, pickle, numpy as np, time, math, random, logging
+import util, pickle, numpy as np, time, math, random, logging, os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 import tensorflow as tf
@@ -54,7 +54,7 @@ def reformatdata(cap=None, stops=False):
             words = [lemmatizer.lemmatize(w.lower()) for w in words]
             sent = " ".join(words)
             label = 1 if d[1][0] == 1 else 0
-            f.write("{0}::::{1}\n".format(sent, label))
+            f.write("{0}+:::{1}\n".format(sent, label))
 
     print("reformat test")
     with open("data/processed/test.out", "w") as f:
@@ -66,7 +66,7 @@ def reformatdata(cap=None, stops=False):
                 words = [lemmatizer.lemmatize(w) for w in words if w not in util.stops]
             sent = " ".join(words)
             label = 1 if d[1][0] == 1 else 0
-            f.write("{0}::::{1}\n".format(sent, label))
+            f.write("{0}+:::{1}\n".format(sent, label))
 
 def neural_network_model(data):
     hidden_1_layer = {'f_fum': n_nodes_hl1,
@@ -160,7 +160,7 @@ def get_test_set_data(fn, model):
             sent = review[0]
             label = [1, 0] if review[1][:-1] == '1' else [0, 1]
             features = model.transform([sent])
-            reviews.append(features.toarray().tolist()[0 ])
+            reviews.append(features.toarray().tolist()[0])
             labels.append(label)
 
     return np.array(reviews), np.array(labels)
@@ -186,7 +186,7 @@ def train_network():
 def create_review_avgs_and_labels(reviews, model):
     vocab = set(model.wv.vocab)
     features = list()
-    for rev in reviews:
+    for i, rev in enumerate(reviews):
         fvec = np.zeros(model.vector_size, dtype=np.float32)
         wordct = 0
         words = rev.split()
@@ -213,7 +213,6 @@ def train_w2v_model(sentences):
                      seed=1)
 
     # Save the model
-    # model.save(input("Enter model name: "))
     model.save("data/w2v_nn")
 
     return model
@@ -245,8 +244,8 @@ def train_neural_network_w2v(x, y, model):
                 batch_y = []
                 batches_run = 0
                 for line in f:
-                    review = line.split("::::")
-                    label = [1, 0] if review[1][:-1] == '1' else [0, 1]
+                    review = line.split("+:::")
+                    label = [1, 0] if review[1][0] == '1' else [0, 1]
                     sentence = review[0]
                     batch_x.append(sentence)
                     batch_y.append(label)
@@ -290,6 +289,29 @@ def get_test_set_data_w2v(fn, model):
     features = create_review_avgs_and_labels(reviews, model)
     return features, np.array(labels)
 
+def ranforest(sents, labels):
+    model = Word2Vec.load("data/w2v_nn")
+
+    # Turn sentences into vector avgs
+    print("Create feats")
+    features = create_review_avgs_and_labels(sents, model)
+
+    # Divide feat and lab matrices into trianing set and test set
+    p = math.ceil(len(features) * .95)
+    train_x = features[:p]
+    train_y = np.array(labels[:p])
+    test_x = features[p:]
+    test_y = np.array(labels[p:])
+
+    # Run RF classifier
+    rf = ranForestClassifier(train_x, train_y)
+
+    # Test RF Classifer and get accuracy
+    predictions = rf.predict(test_x)
+    testacc = accuracy_score(test_y, predictions)
+
+    print("Test acc: {0}".format(testacc))
+
 def ranForestClassifier(training, labels, n_est=100):
     rf = RandomForestClassifier(n_est)
     rf.fit(training, labels)
@@ -300,26 +322,43 @@ def ranForestClassifier(training, labels, n_est=100):
 
     return rf
 
-def ranforest():
-    model = pickle.load(open("../w2v", "rb"))
+def getlabels(data):
+    labels = []
+    for d in data:
+        val = d[0].split("+:::")[1][0]
+        # print()
+        # val = d[0].split("::::")[1][0]
+        labels.append(int(val))
 
-    # Turn training reviews into vector averages
-    train_reviews = pickle.load(open("data/processed/train.p", "rb"))
-    train_rev_avgs, train_labels = util.create_review_avgs_and_labels(train_reviews, model)
 
-    # Turn test reviews into vector averages
-    test_reviews = pickle.load(open("data/processed/test.p", "rb"))
-    test_rev_avgs, test_labels = util.create_review_avgs_and_labels(test_reviews, model)
+    return labels
 
-    # Run RF classifier
-    rf = ranForestClassifier(train_rev_avgs, train_labels)
+def extractdata(paths, cap=1, addlabels=False):
+    l = []
+    for path in paths:
+        val = path.split("/")[-2]
+        if addlabels:
+            lab = [1, 0] if val == 'pos' else [0, 1]
+        for i, file in enumerate(os.listdir(path)):
+            if cap is None or i < cap:
+                with open(path + file, "r") as f:
+                    for line in f:
+                        if addlabels:
+                            l.append([line, lab])
+                        else:
+                            l.append([line])
+            else:
+                break
 
-    # Test RF Classifer and get accuracy
-    predictions = rf.predict(test_rev_avgs)
-    testacc = accuracy_score(test_labels, predictions)
+    return l
 
-    print("Test acc: {0}".format(testacc))
+def getsents(data):
+    sents = []
+    for d in data:
+        val = d[0].split("+:::")[0]
+        sents.append(val)
 
+    return sents
 
 if __name__ == '__main__':
     # BOW
@@ -327,13 +366,20 @@ if __name__ == '__main__':
     # create_lexicon()
     # train_network()
 
-    # Prep data for W2VNN or RF
-    reformatdata(cap=None, stops=False)
-    data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
-                                  '/data/processed/'], cap=None)
-    sents = [x[0].split("::::")[0].split() for x in data]
-    model = train_w2v_model(sents)
-
+    # Prep data for W2VNN
+    # reformatdata(cap=None, stops=False)
+    # data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
+    #                               '/data/processed/'], cap=None)
+    # sents = [x[0].split("::::")[0].split() for x in data]
+    # model = train_w2v_model(sents)
     # train_network_w2v()
-    ranforest()
 
+    # RF
+    # reformatdata(cap=100, stops=False)
+    print("Extract sents")
+    data = extractdata(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
+                                  '/data/processed/'], cap=None)
+    sents = getsents(data)
+    labels = getlabels(data)
+    # model = train_w2v_model(sents)
+    ranforest(sents, labels)
