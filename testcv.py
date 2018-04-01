@@ -24,7 +24,7 @@ num_feats = 2000
 
 total_batches = int(50000 / batch_size)
 
-tf_log = 'tf.log'
+logfile = 'tf.log'
 
 def create_lexicon():
     data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
@@ -103,7 +103,7 @@ def train_neural_network(x, y, model):
     with tf.Session() as sess:
         sess.run(tf.initialize_all_variables())
         try:
-            epoch = int(open(tf_log, 'r').read().split('\n')[-2]) + 1
+            epoch = int(open(logfile, 'r').read().split('\n')[-2]) + 1
             print('STARTING:', epoch)
         except:
             epoch = 1
@@ -139,7 +139,7 @@ def train_neural_network(x, y, model):
 
             saver.save(sess, "data/model.ckpt")
             print('Epoch', epoch, 'completed out of', hm_epochs, 'loss:', epoch_loss)
-            with open(tf_log, 'a') as f:
+            with open(logfile, 'a') as f:
                 f.write(str(epoch) + '\n')
             epoch += 1
         correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
@@ -219,54 +219,54 @@ def train_w2v_model(sentences):
 
 def train_neural_network_w2v(x, y, model):
     start2 = time.time()
-    prediction = neural_network_model(x)
-    saver = tf.train.Saver()
-    cost = tf.reduce_mean(
-        tf.nn.softmax_cross_entropy_with_logits_v2(logits=prediction, labels=y))
-    optimizer = tf.train.AdamOptimizer().minimize(cost)
+    est = neural_network_model(x)
+    sav = tf.train.Saver()
+    cst = tf.reduce_mean(
+        tf.nn.softmax_cross_entropy_with_logits_v2(logits=est, labels=y))
+    optimizer = tf.train.AdamOptimizer().minimize(cst)
 
-    hm_epochs = 20
+    num_epochs = 20
     with tf.Session() as sess:
         sess.run(tf.initialize_all_variables())
         try:
-            epoch = int(open(tf_log, 'r').read().split('\n')[-2]) + 1
-            print('STARTING:', epoch)
+            epc = int(open(logfile, 'r').read().split('\n')[-2]) + 1
+            print('STARTING:', epc)
         except:
-            epoch = 1
+            epc = 1
 
-        while epoch <= hm_epochs:
-            if epoch != 1:
-                saver.restore(sess, "data/model.ckpt")
-            epoch_loss = 1
-            with open('data/processed/training.out', buffering=20000,
-                      encoding='latin-1') as f:
-                batch_x = []
-                batch_y = []
+        while epc <= num_epochs:
+            if epc != 1:
+                sav.restore(sess, "data/model.ckpt")
+            loss = 1
+            with open('data/processed/training.out', buffering=20000) as f:
+                set_x = []
+                set_y = []
                 batches_run = 0
                 for line in f:
                     review = line.split("+:::")
                     label = [1, 0] if review[1][0] == '1' else [0, 1]
                     sentence = review[0]
-                    batch_x.append(sentence)
-                    batch_y.append(label)
-                    if len(batch_x) >= batch_size:
-                        train_x = create_review_avgs_and_labels(batch_x, model)
-                        _, c = sess.run([optimizer, cost],
+                    set_x.append(sentence)
+                    set_y.append(label)
+                    if len(set_x) >= batch_size:
+                        train_x = create_review_avgs_and_labels(set_x, model)
+                        _, c = sess.run([optimizer, cst],
                                         feed_dict={x: train_x,
-                                                   y: np.array(batch_y)})
-                        epoch_loss += c
-                        batch_x = []
-                        batch_y = []
+                                                   y: np.array(set_y)})
+                        loss += c
+                        set_x = []
+                        set_y = []
                         batches_run += 1
-                        print('Batch run:', batches_run, '/', total_batches, '| Epoch:',
-                              epoch, '| Batch Loss:', c, )
+                        print("Batch run:{0}/{1} | Epoch: {2} | Batch Loss: {3}"
+                              .format(batches_run, total_batches, epc, c) )
 
-            saver.save(sess, "data/model.ckpt")
-            print('Epoch', epoch, 'completed out of', hm_epochs, 'loss:', epoch_loss)
-            with open(tf_log, 'a') as f:
-                f.write(str(epoch) + '\n')
-            epoch += 1
-        correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
+            sav.save(sess, "data/model.ckpt")
+            print('Completed epoch {0} out of {1} loss = {2}'.format(epc, num_epochs,
+                                                                     loss))
+            with open(logfile, 'a') as f:
+                f.write(str(epc) + '\n')
+            epc += 1
+        correct = tf.equal(tf.argmax(est, 1), tf.argmax(y, 1))
         accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
 
         test_x, test_y = get_test_set_data_w2v("data/processed/test.out", model)

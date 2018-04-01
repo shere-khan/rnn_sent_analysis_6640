@@ -12,3 +12,7 @@ aclImdb/*
 *.p
 word2vecmodel
 w2v
+review_bak/
+reviews/
+*w2v*
+*.out
