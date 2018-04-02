@@ -7,21 +7,21 @@ from sklearn.metrics import accuracy_score
 
 
 def train_w2v_model(sentences):
-    num_features = 1000  # Word vector dimensionality
-    min_word_count = 40  # Minimum word count
-    num_workers = 8  # Number of threads to run in parallel
-    context = 10  # Context window size
-    downsampling = 1e-3  # Downsample setting for frequent words
+    num_feats = 1000
+    min_ct= 40
+    num_workers = 8
+    cxt = 10
+    dwnsamp = 1e-3
 
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s',
                         level=logging.INFO)
     print("W2V training...")
-    model = Word2Vec(sentences, workers=num_workers, size=num_features,
-                     min_count=min_word_count, window=context, sample=downsampling,
+    model = Word2Vec(sentences, workers=num_workers, size=num_feats,
+                     min_count=min_ct, window=cxt, sample=dwnsamp,
                      seed=1)
 
     # Save the model
-    model.save("data/rf/w2vrf")
+    model.save("w2vrf")
 
     return model
 
@@ -33,7 +33,7 @@ def ranForestClassifier(training, labels, n_est=100):
 
 def ranforest():
     start = time.time()
-    model = Word2Vec.load("data/rf/w2vrf")
+    model = Word2Vec.load("w2vrf")
 
     # Turn training reviews into vector averages
     train_reviews = pickle.load(open("data/rf/train.out", "rb"))
@@ -54,24 +54,13 @@ def ranforest():
     print("Test acc: {0}".format(testacc))
 
 def trainw2voption():
-    train_reviews = pickle.load(
-        open("data/rf/train.out", "rb"))
-    test_reviews = pickle.load(
-        open("data/rf/test.out", "rb"))
+    train_reviews = pickle.load(open("rftrain.out", "rb"))
+    test_reviews = pickle.load(open("rftest.out", "rb"))
     sents = [r[0] for r in train_reviews]
     sents.extend([r[0] for r in test_reviews])
     train_w2v_model(sents)
 
 if __name__ == '__main__':
-    isfilesaved = False
-    print("What would you like to do?")
-    print("1: Process data\n2: Train w2vec model\n3: Random Forest Classifier\n\n")
-    option = input("input: ")
-    if option == '1':
-        captrain = int(input("Cap train: "))
-        captest = int(input("Cap test: "))
-        util.prepreprocessdata(captrain, captest)
-    elif option == '2':
-        trainw2voption()
-    elif option == '3':  # Use RF classifier
-        ranforest()
+    util.prepreprocessdata(-1, -1)
+    trainw2voption()
+    ranforest()

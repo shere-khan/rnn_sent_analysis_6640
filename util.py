@@ -2,7 +2,6 @@ import os, re, pickle, random, numpy as np
 from nltk.data import load
 from nltk.corpus import stopwords
 from bs4 import BeautifulSoup
-from keras.preprocessing import sequence
 
 
 stops = set(stopwords.words('english'))
@@ -16,7 +15,7 @@ def extract_raw_data(filepaths, cap=1):
             if cap is None or i < cap:
                 with open(path + file, "r") as f:
                     for line in f:
-                            l.append([line, lab])
+                        l.append([line, lab])
             else:
                 break
 
@@ -122,16 +121,6 @@ def transform_reviews_to_word_vectors(reviews, model):
 
     return np.array(data), np.array(labels)
 
-def pad_sequences(review_text_list, seq_len, dim):
-    print("padding seq")
-    for review_text in review_text_list:
-        while len(review_text) < seq_len:
-            np.append(review_text, [0])
-    feature_vector = sequence.pad_sequences(review_text_list, padding='post', dtype='float32',
-                                            maxlen=dim, value=0)
-
-    return feature_vector
-
 def create_review_avgs_and_labels(reviews, model):
     vocab = set(model.wv.vocab)
     print('vocab len: ', len(vocab))
@@ -167,30 +156,33 @@ def prepreprocessdata(captrain=1000, captest=1000):
     tokr = load('tokenizers/punkt/english.pickle')
     sw = True
 
-    if input("Process data (y/n)?") == 'y':
-        # Process training data
-        print("Processing training data...")
-        trainneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/train/neg'
-        train_neg_sents = extractdata(trainneg, captrain, tokr, 0, sw)
+    # Process training data
+    print("Processing training data...")
+    # trainneg = 'reviews/train/neg'
+    trainneg = input("Enter neg train review location: ")
+    train_neg_sents = extractdata(trainneg, captrain, tokr, 0, sw)
 
-        trainpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/train/pos'
-        train_pos_sents = extractdata(trainpos, captrain, tokr, 1, sw)
+    # trainpos = 'reviews/train/pos'
+    trainpos = input("Enter pos train review location: ")
+    train_pos_sents = extractdata(trainpos, captrain, tokr, 1, sw)
 
-        labled_train_reviews = combinedata(train_neg_sents, train_pos_sents)
+    labled_train_reviews = combinedata(train_neg_sents, train_pos_sents)
 
-        print("Creating pickle for processed data")
-        pickle.dump(labled_train_reviews, open("data/rf/train.out", "wb"))
+    print("Creating pickle for processed data")
+    pickle.dump(labled_train_reviews, open("rftrain.out", "wb"))
 
-        # Process test data
-        print("Processing test data...")
-        testneg = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/neg'
-        test_neg_sents = extractdata(testneg, captest, tokr, 0, sw)
-        testpos = '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/pos'
-        test_pos_sents = extractdata(testpos, captest, tokr, 1, sw)
+    # Process test data
+    print("Processing test data...")
+    # testneg = 'reviews/test/neg'
+    testneg = input("Enter neg test review location: ")
+    test_neg_sents = extractdata(testneg, captest, tokr, 0, sw)
+    # testpos = 'reviews/test/pos'
+    testpos = input("Enter pos test review location: ")
+    test_pos_sents = extractdata(testpos, captest, tokr, 1, sw)
 
-        labled_test_reviews = combinedata(test_neg_sents, test_pos_sents)
+    labled_test_reviews = combinedata(test_neg_sents, test_pos_sents)
 
-        print("Creating pickle for processed data")
-        pickle.dump(labled_test_reviews, open("data/rf/test.out", "wb"))
+    print("Creating pickle for processed data")
+    pickle.dump(labled_test_reviews, open("rftest.out", "wb"))
 
-        return labled_train_reviews, labled_test_reviews
+    return labled_train_reviews, labled_test_reviews
