@@ -287,8 +287,7 @@ if __name__ == '__main__':
     testpos = input("Enter pos test review location: ")
     testneg = input("Enter neg test review location: ")
     filenames = [neg, pos, testneg, testpos]
-    reformatdata(filenames, cap=100, stops=False)
-    # reformatdata(filenames, cap=None, stops=False)
+    reformatdata(filenames, cap=None, stops=False)
     data = util.extract_raw_data(['data/processed/'], cap=None)
     sents = [x[0].split("+:::")[0].split() for x in data]
     train_w2v_model(sents)
