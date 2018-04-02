@@ -36,11 +36,11 @@ def ranforest():
     model = Word2Vec.load("w2vrf")
 
     # Turn training reviews into vector averages
-    train_reviews = pickle.load(open("data/rf/train.out", "rb"))
+    train_reviews = pickle.load(open("rftrain.out", "rb"))
     train_rev_avgs, train_labels = util.create_review_avgs_and_labels(train_reviews,
                                                                       model)
     # Turn test reviews into vector averages
-    test_reviews = pickle.load(open("data/rf/test.out", "rb"))
+    test_reviews = pickle.load(open("rftest.out", "rb"))
     test_rev_avgs, test_labels = util.create_review_avgs_and_labels(test_reviews,
                                                                     model)
     # Run RF classifier

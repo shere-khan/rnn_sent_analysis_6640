@@ -1,4 +1,4 @@
-import util, pickle, numpy as np, time, math, random, logging, os
+import util, pickle, numpy as np, time, math, random, logging, os, errno
 from sklearn.ensemble import RandomForestClassifier
 import tensorflow as tf
 from gensim.models import Word2Vec
@@ -8,10 +8,6 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
 
-filenames = ['/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/train/neg/',
-             '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/train/pos/',
-             '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/neg/',
-             '/home/justin/pycharmprojects/rnn_sent_analysis_6640/reviews/test/pos/']
 
 num_classes = 2
 batch_size = 5000
@@ -23,7 +19,7 @@ total_num_batches = int(50000 / batch_size)
 
 logfile = 'tf.log'
 
-def reformatdata(cap=None, stops=False):
+def reformatdata(filenames, cap=None, stops=False):
     data = util.extract_raw_data(filenames, cap=cap)
     random.shuffle(data)
 
@@ -32,7 +28,14 @@ def reformatdata(cap=None, stops=False):
     test = data[p:]
     lemmatizer = WordNetLemmatizer()
 
-    with open("data/processed/training.out", "w") as f:
+    if not os.path.exists(os.path.dirname("data/processed/training.out")):
+        try:
+            os.makedirs(os.path.dirname("data/processed/training.out"))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+    with open("data/processed/training.out", "w+") as f:
         for d in training:
             review = BeautifulSoup(d[0], "html5lib").get_text()
             review = util.remove_emoji_and_nums(review)
@@ -100,8 +103,6 @@ def train_network_w2v():
 
     model = Word2Vec.load("data/w2v_nn")
     train_neural_network_w2v(x, y, model)
-
-    # print("Total Elapsed Time = %.2f seconds" % (time.time() - begin))
 
 def create_review_avgs_and_labels(reviews, model):
     vocab = set(model.wv.vocab)
@@ -281,10 +282,14 @@ def getsents(data):
 
 if __name__ == '__main__':
     # Prep data for W2VNN
-    reformatdata(cap=1000, stops=False)
-    data = util.extract_raw_data(['/home/justin/pycharmprojects/rnn_sent_analysis_6640'
-                                  '/data/processed/'], cap=None)
+    pos = input("Enter pos train review location: ")
+    neg = input("Enter neg train review location: ")
+    testpos = input("Enter pos test review location: ")
+    testneg = input("Enter neg test review location: ")
+    filenames = [neg, pos, testneg, testpos]
+    reformatdata(filenames, cap=100, stops=False)
+    # reformatdata(filenames, cap=None, stops=False)
+    data = util.extract_raw_data(['data/processed/'], cap=None)
     sents = [x[0].split("+:::")[0].split() for x in data]
     train_w2v_model(sents)
     train_network_w2v()
-    pass
